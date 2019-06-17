@@ -1,0 +1,80 @@
+Collection - interface
+Collections - class
+------------------------------------------------------------------
+Collection(I) provides some basic operations
+There are interfaces which extend base interface and provide some more operations
+
+1. List -> provides indexed based insertion
+2. Set
+3. SortedSet extends Set
+4. Map
+5. SortedMap extends Map
+6. Queue
+7. Deque
+------------------------------------------------------------------
+Collection(I) -> List(I)
+List(I) -> ArrayList(C) 
+
+Collection values= new ArrayList();
+------------------------------------------------------------------
+(i)List - Indexed values inserted and retrieved (can add/remove ele's based on index)
+
+1. Vector/ArrayList -> Dynamic Array -> Retrieval O(1) - Insertion/deletion - O(n)
+Diff between Vector and ArrayList 
+elements inserted into a vector, when vector is full new array created with double its size and elements inserted into that new array in the same order.
+Vector - 100%
+ArrayList - 50%
+Vector - Thread safe (every method uses synchronized)
+ArrayList- Not Thread safe
+Vector- slow
+Arraylist- fast
+
+2. LinkedList -> Retrieval O(n) - Insertion/deletion - O(1)
+
+------------------------------------------------------------------
+
+Set - unique values -> add() methods returns boolean
+HashSet- Order of elements inserted is different from what is retrieved, since values are inserted based on hash.
+TreeSet - Ordered set of unique values
+
+1. When adding objects into a HashSet, by default all objects will be different since the hashcode will be different. 
+But if we want to remove duplicate objects then we need to override hashCode() and equals() method.
+
+bucket#= obj.hashCode() & ( Bucket size - 1 );	( &- Bitwise AND )
+equals() - search the linked list in the bucket for the same object using this method, if not found insert at the beginning.
+
+2. When adding object to a TreeSet, we will get error at Compile time if the Class of the object added doesnt implement Comparable interface
+since it will need to compare each object with another for sorting.
+
+------------------------------------------------------------------
+Map<K,V>, Entry<K,v> (interface within Map interface accessed by Map.Entry<K,v>)
+Set<Map.Entry<K,V>> entrySet= map.entrySet();
+for(Map.Entry<K,V> entry: entrySet){
+(e.getKey()+":::"+e.getValue());
+}
+
+1. HashMap -> doesn't maintain insertion order
+Hashcode calculated based on key
+Each bucket has a linked list with each node contains (hashcode, key, value, next, previous)
+Allows one null key
+
+2. Hashtable is similar to HashMap but it is synchronized
+Can work with multiple threads
+Not null key
+Slower than HashMap
+
+3. TreeMap -> orders the elements in asc order by key
+
+4. LinkedHashMap -> maintains the insertion order
+
+Cautions:
+---------
+1. When adding an Object into a HashMap, you must implement an equals() and a hashCode() method in your class Collection to make it work properly.
+2. When adding objects to a TreeMap, you must implement Comparable interface or it will throw Compile time exception.
+Exception in thread "main" java.lang.ClassCastException: GeneKey cannot be cast to java.lang.Comparable
+
+------------------------------------------------------------------
+
+Collection.sort(list, (o1,o2)->{	//implement comparator interface with lambda expression
+	return o1>o2?1:-1;
+});

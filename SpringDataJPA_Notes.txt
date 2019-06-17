@@ -1,0 +1,267 @@
+The central interface in Spring Data repository abstraction is Repository (probably not that much of a surprise). It takes the the domain class to manage as well as the id type of the domain class as type arguments.
+
+1. CrudRepository extends Repository<T, Id>
+2. PagingAndSortingRepository extends (1) 
+3. JpaRepository extends (2)
+
+The CrudRepository provides sophisticated CRUD functionality for the entity class that is being managed.
+
+public interface CrudRepository<T, ID extends Serializable>
+    extends Repository<T, ID> {
+                                                                                                                       (1)
+    <S extends T> S save(S entity);
+                                                                                                                       (2)
+    T findOne(ID primaryKey);
+                                                                                                                       (3)
+    Iterable<T> findAll();
+
+    Long count();
+                                                                                                                       (4)
+    void delete(T entity);
+                                                                                                                       (5)
+    boolean exists(ID primaryKey);
+                                                                                                                       (6)
+    // … more functionality omitted.
+}
+
+------------------------------
+
+public interface PagingAndSortingRepository<T, ID extends Serializable> 
+  extends CrudRepository<T, ID> {
+
+  Iterable<T> findAll(Sort sort);
+
+  Page<T> findAll(Pageable pageable);
+}
+
+PagingAndSortingRepository<User, Long> repository = // … get access to a bean
+Page<User> users = repository.findAll(new PageRequest(1, 20)); // PageRequest implements Pageable
+
+------------------------------
+
+Usually we will have persistence technology specific sub-interfaces to include additional technology specific methods.
+
+
+
+1. Declare an interface extending Repository or one of its subinterfaces and type it to the domain class that it will handle.
+
+public interface PersonRepository extends Repository<User, Long> { … }
+
+2. Declare query methods on the interface.
+
+	List<Person> findByLastname(String lastname);
+
+3. Set up Spring to create proxy instances for those interfaces.
+
+	<?xml version="1.0" encoding="UTF-8"?>
+	<beans...
+	  <repositories base-package="com.acme.repositories" />
+	</beans>
+
+4. Get the repository instance injected and use it.
+
+	public class SomeClient {
+
+	  @Autowired
+	  private PersonRepository repository;
+
+	  public void doSomething() {
+		List<Person> persons = repository.findByLastname("Matthews");
+	  }
+	}
+
+
+Defining query methods
+----------------------
+
+The repository proxy has two ways to derive a store-specific query from the method name. 
+It can derive the query from the method name directly, or by using an additionally created query.
+
+Query lookup strategies
+-----------------------
+
+1. CREATE - attempts to construct a store-specific query from the query method name. 
+	The general approach is to remove a given set of well-known prefixes from the method name and parse the rest of the method. 
+	
+2. USE_DECLARED_QUERY - tries to find a declared query and will throw an exception in case it can't find one. 
+	The query can be defined by an annotation.
+
+3. CREATE_IF_NOT_FOUND (default)
+	CREATE_IF_NOT_FOUND combines CREATE and USE_DECLARED_QUERY.
+
+Mechanism for query creation
+----------------------------
+
+1. Strips the prefixes find…By, read…By, and get…By
+2. After the first "By" where clause starts
+3. Use And and Or between properties (also supports Between, LessThan, GreaterThan, Like)
+
+public interface PersonRepository extends Repository<User, Long> {
+
+  List<Person> findByEmailAddressAndLastname(EmailAddress emailAddress, String lastname);
+
+  // Enables the distinct flag for the query
+  List<Person> findDistinctPeopleByLastnameOrFirstname(String lastname, String firstname);
+  List<Person> findPeopleDistinctByLastnameOrFirstname(String lastname, String firstname);
+
+  // Enabling ignoring case for an individual property
+  List<Person> findByLastnameIgnoreCase(String lastname);
+  // Enabling ignoring case for all suitable properties
+  List<Person> findByLastnameAndFirstnameAllIgnoreCase(String lastname, String firstname);
+
+  // Enabling static ORDER BY for a query
+  List<Person> findByLastnameOrderByFirstnameAsc(String lastname);
+  List<Person> findByLastnameOrderByFirstnameDesc(String lastname);
+}
+
+4. Also define constraints by traversing nested properties. 
+	Assume Persons have Addresses with ZipCodes
+
+	List<Person> findByAddressZipCode(ZipCode zipCode);	//	-> x.address.zipCode
+	
+	Algorithm: 
+		1. Searches for AddressZipCode
+		2. Splits at the camel case from right side
+			Searches for AddressZip / Code -> AddressZip not found
+			Searches for Address / ZipCode -> Finds Address -> Finds zipCode
+						
+	Ideally use "_" to separate properties
+	List<Person> findByAddress_ZipCode(ZipCode zipCode);
+	
+5. Use Pageable and Sort to apply pagination and sorting to your queries dynamically
+	
+	Page<User> findByLastname(String lastname, Pageable pageable);
+
+	List<User> findByLastname(String lastname, Sort sort);
+
+	List<User> findByLastname(String lastname, Pageable pageable);
+	
+Some more keywords supported
+
+Apart from And, Or, OrderBy, IgnoreCase
+
+1. Is, Equals			findByFirstNameIs OR findByFirstNameEquals
+2. Between				findByStartDateBetween	-> where x.startDate between ?1 and ?2
+3. LessThan				findBySalaryLessThan	-> where x.salary < ?1
+4. LessThanEqual
+5. GreaterThan
+6. GreaterThanEqual
+7. IsNull
+8. IsNotNull, NotNull
+9. Like
+10. StartingWith
+11. EndingWith
+12. Containing
+13. Not			-> where x.lastName <> ?1
+14. In, NotIn	findByAgeIn(Collection<Integer> ageList)
+15. True, False	findByActiveTrue  -> where x.active = true
+--------------------------------------------------------------------------------------------
+
+JPA Named queries
+-----------------
+
+@NamedQuery 	-> Specify query with JPA Query Language
+
+@NamedNative 	-> SQL Specific to DB
+ 
+The way to access the Named Query is to name the query method of repository interface to match the name of named query
+
+@NamedQuery(name="Person.findByName", query="select p from Person where p.name=?1")
+Use method name as findByName in repository interface and pass params
+
+@NamedQuery(name="Person.myQuery", value="select p from Person where p.name=?1 and p.salary > ?2")
+Use method name as myQuery in repository interface and pass params
+
+Named queries are hard to maintain since the entity class is fussy with queries.
+
+@Query annotation:
+------
+Frees the entoty class from persistence related queries
+Used in the repository interface directly on top of the method. 
+This allows for co-location between query and repository.
+Has precedence over NamedQuery when there is a name conflict.
+
+public interface PersonRepository extends Repository<Person, Integer> {
+	@Query(value="select p from Person p where LOWER(p.lastName)=LOWER(:lastName)")
+	public Person find(@Param("lastName") String lastName);
+	
+	//for Update query
+	@Transactional	->mandatory if not mentioned will throw error
+	@Modifying //informs Spring that it is updating query and not a select query
+	@Query(value="update Person p set p.email=:email where p.id=:id")
+	public int updateUser(@Param("id") Integer id);
+}
+	
+--------------------------------------------------------------------------------------------
+
+Creating repository instances
+-----------------------------
+
+XML
+<beans...>
+<repositories base-package="com.acme.repositories">
+  <context:exclude-filter type="regex" expression=".*SomeRepository" />
+</repositories>
+</beans>
+
+JavaConfig
+The repository infrastructure can also be triggered using a store-specific @Enable${store}Repositories annotation on a JavaConfig class. For an introduction into Java-based configuration of the Spring container, see the reference documentation.[1]
+
+A sample configuration to enable Spring Data repositories looks something like this.
+
+@Configuration
+@EnableJpaRepositories("com.acme.repositories")
+class ApplicationConfiguration {
+
+  @Bean
+  public EntityManagerFactory entityManagerFactory() {
+    // …
+  }
+}
+
+
+------------------------------------------------------------------------------
+
+Async Query results
+-------------------
+
+Repository queries can be executed asynchronously as well. 
+This means the query will immediately return and the actual query execution
+is handed over to Spring TaskExecutor. (It executes the query on a separate thread)
+
+1. Use @EnableAsync on top of Main Configuration class to enable asynchronous capability
+2. Use @Async on top of the repository method
+3. Use one of the allowed return types
+	(i)   java.util.concurrent.Future<T>
+	(ii)  java.util.concurrent.CompletableFuture<T>
+	(iii) org.springframework.util.concurrent.ListenableFuture<T>
+
+In the service
+
+CompletableFuture<User> comp= userService.findByFirstName(firstName);
+User user= comp.get(20, Timeout.SECONDS); //if no results within 20 secs then Timeout error
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

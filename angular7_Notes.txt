@@ -1,0 +1,835 @@
+Angular 7
+----------
+
+Including Bootstrap in angular
+
+There is three way to include bootstrap in your project 
+1) Add CDN Link in index.html file 
+2) Install bootstrap using npm and set path in angular.json Recommended
+3) Install bootstrap using npm and set path in index.html file
+
+I recommended you following 2 methods that are installed bootstrap using npm because its installed in your project directory and you can easily access it
+
+Method 1
+
+Add Bootstrap, Jquery and popper.js CDN path to you angular project index.html file
+
+Bootstrap.css
+https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+Bootstrap.js
+https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" 
+Jquery.js
+https://code.jquery.com/jquery-3.2.1.slim.min.js
+Popper.js
+https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js
+
+Method 2
+
+1) Install bootstrap using npm
+
+npm install bootstrap --save
+after the installation of Bootstrap 4, we Need two More javascript Package that is Jquery and Popper.js without these two package bootstrap is not complete because Bootstrap 4 is using Jquery and popper.js package so we have to install as well
+
+2) Install JQUERY
+
+npm install jquery --save
+3) Install Popper.js
+
+npm install popper.js --save
+Now Bootstrap is Install on you Project Directory inside node_modules Folder
+
+open angular.json this file are available on you angular directory open that file and add the path of bootstrap, jquery, and popper.js files inside styles[] and scripts[] path see the below example
+
+"styles": [   
+    "node_modules/bootstrap/dist/css/bootstrap.min.css",
+    "styles.css"
+  ],
+  "scripts": [  
+    "node_modules/jquery/dist/jquery.min.js",
+    "node_modules/popper.js/dist/umd/popper.min.js",
+    "node_modules/bootstrap/dist/js/bootstrap.min.js"
+  ],
+Note: Don't change a sequence of js file it should be like this
+
+Method 3
+
+Install bootstrap using npm follow Method 2 in method 3 we just set path inside index.html file instead of angular.json file
+
+bootstrap.css
+
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css",
+        "styles.css">
+Jquery.js
+
+<script src="node_modules/jquery/dist/jquery.min.js"><br>
+Bootstrap.js
+
+<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"><br>
+Popper.js
+
+<script src="node_modules/popper.js/dist/umd/popper.min.js"><br>
+Now Bootstrap Working fine Now
+--------------------------------------------------------------------------
+
+Decorator
+----------
+@Component
+
+Life cycle hooks
+1. ngOnChanges 		-> called when the @Input property on the component changes value, we have access to curr and prev values
+2. ngInit()			-> called once during component init
+3. ngOnDestroy() 	-> called once before destroying component
+
+1. The selector can be mentioned in 3 ways 
+HTML Tag 		->selector: 'app-test'
+HTML class		->selector: '.app-test'
+HTML attribute	->selector: '[app-test]'
+
+2. The template can be specified in 2 ways
+Inline			-> for specifying in multiple line use `` instead of '' 
+HTML file		-> specify relative path of HTML
+
+3. style can be
+Inline			-> use `` for multiple lines
+CSS file
+
+-----------------------------------------------
+Interpolation - {{ }}
+{{ expression }} {{ property }} 
+there cannot be
+-> an assignment within curly braces
+-> global variables like window, document etc for this to work simply 
+assign a variable with window.location.href in ts file and use that in curly braces 
+
+-----------------------------------------------
+
+Attribute vs Property
+
+are not the same
+Attributes - HTML
+Property - DOM
+Attributes initialize the DOM and then they cannot change while properties can change
+
+element.getAttribute('attr1') -> someValue
+element.value = differentValue
+-----------------------------------------------
+
+Class binding -> dynamically add or remove classes to an element
+When class="someClasses" and [class] attribute both are present angular [class] will be applied
+
+1. [class]= "text-success" 					-> directly adding class
+2. [class.text-success]= "isSuccess"		-> applying class only if isSuccess is true -> only for single class
+For mutiple classes use below
+3. [ngClass]= "messageClasses"
+messageClasses= {
+	"text-success": !this.hasError,
+	"text-danger": this.hasError,
+	"text-special": this.isInfo
+}
+
+Style attribute
+
+1. [style.color]= "'red'"
+2. [style.color]= "isError ? 'red' : 'green'"
+3. [ngStyle]= "myStyle"
+myStyle= {
+	color: "purple",
+	fontStyle: "italic"
+}
+
+---------------------------------------------------
+Bindings:
+
+1. Data Binding 		-> data flow from js to view
+
+2. Event Binding		-> events flow from view to js
+(click)= "someFunction($event)" pass event object to the function
+
+3. Template reference variables -> refer some other element inside other element
+<input #myInput type="text"/>
+<button (click)= "someFun(myInput.value)">Click</button>
+
+2-way Binding
+-------------
+Using ngModel directive -> ************requires FormsModule
+<input type="text" [(ngModel}]= "myInput"/>
+
+----------------------------------------------------
+
+Conditional directives - Use on the element to render or not
+-------------------------------------------------------------
+1. *ngIf ="true/false"
+<h2 *ngIf="isHeader; else elseBlock">	-> template reference variable
+	Some header content here
+</h2>
+OR
+<div *ngIf="isHeader; then thenBlock; else elseBlock">	-> template reference variable
+	Some header content here
+</div>
+
+<ng-template #elseBlock>
+	<div>Some other content here</div>
+</ng-template>	
+-------------------
+2. *ngSwitch
+<div [ngSwitch]="color">
+	<div *ngSwitchCase="'red'">Yu picked red</div>
+	<div *ngSwitchCase="'blue'">Yu picked blue</div>
+	<div *ngSwitchDefault=>Pick again</div>
+</div>
+
+Loop directive
+
+3. *ngFor
+colors= ["red", "green", "blue"];
+<div *ngFor="let color of colors; index as i"> 		-> index, first, last, odd, even
+	{{color}}
+</div>
+
+-------------------------------------------------------------------------------------
+
+Component Interaction
+---------------------
+
+Parent component <-> Child component
+
+Parent -> attributes -> Child
+
+Child  -> events 	 -> Parent
+
+ParentComponent.ts
+------------------
+public parentData: string = "Hello Kid...";
+<child-component (childEvent)= "messageFromChild=$event" [parentData]= "name"/>
+
+{{ messageFromChild }}
+
+ChildComponent.ts
+-----------------
+@Input('parentData') public name;
+{{ name }}
+
+<button (click)= "fireEvent()">Fire</button>
+@Output() public childEvent = new EventEmitter();
+fireEvent() {
+	this.childEvent.emit("Hey Dad...");
+}
+
+-----------------------------------------------------------------------------------
+
+Pipes
+-----
+
+Just like Unix pipe, works on the output of the previous expression
+
+String operations
+-----------------
+public name="codEvolution";
+public name="This is the way forward";
+1. <div> {{ name | lowercase }}</div>	codevolution
+1. <div> {{ name | uppercase }}</div> CODEVOLUTION
+1. <div> {{ name | slice:3:5 }}</div> Ev
+
+1. <div> {{ message | titlecase }}</div> This Is The Way Forward
+
+
+1. <div> {{ jsonObj | json }}</div>	-> prints the json representation directly
+
+Number pipes
+------------
+1. <div> {{ 5.678 | number:1.2-3 }}</div> 	-> 5.678
+1. <div> {{ 5.678 | number:3.4-5 }}</div>	-> 005.6780
+1. <div> {{ 5.678 | number:3.1-2 }}</div>	-> 005.68
+
+Percent
+-------
+1. <div> {{ 0.25 | percent }}</div>	-> 25%
+
+Currency
+--------
+1. <div> {{ 0.25 | currency }}</div>	-> $0.25
+1. <div> {{ 0.25 | currency:'GBP' }}</div>	-> L0.25
+1. <div> {{ 0.25 | currency:'EUR': 'code' }}</div>	-> EUR0.25
+
+1. <div> {{ currDate | date: 'short' }}</div>	-> 12/3/17 9:50PM
+1. <div> {{ currDate | date: 'shortDate' }}</div>	-> 12/3/17
+1. <div> {{ currDate | date: 'shortTime' }}</div>	-> 9:50PM 
+1. <div> {{ currDate | date: 'mediumDate, mediumTime, longDate, longTime' }}</div>
+
+----------------------------------------------------------------------------------------
+
+Services
+--------
+
+A class with a specific purpose
+
+1. Share Data
+2. Applcation logic
+3. External Interaction - DB
+
+Naming convention - *.service.ts
+
+Dependency Injection
+--------------------
+
+A class receives it's dependencies from external sources rather than creating them itself
+
+Without DI	-> tightly coupled to implementation
+----------
+class Car {
+	constructor() {
+		this.engine= new Engine();
+		this.tyres= new Tyres();
+	}
+}
+
+With DI -> loosely coupled
+-------
+class Car {
+	constructor(private engine: Engine, private tyres: Tyres) {
+		this.engine= engine;
+		this.tyres= tyres;
+	}
+}
+
+
+When we do it ourself (it become difficult to create the dependencies ourselves since there could be many)
+---------------------
+engine:Engine	= new Engine(params...);
+tyres:Tyres		= new Tyres(params...);
+	.					.
+	.					.
+	.					.
+car: Car 		= new Car(engine, tyres, ...);
+
+With Angular's Dependency Injection
+-----------------------------------
+Injectory -> Dependencies -> Car
+
+Creating Services
+-----------------
+
+1. Define the Service class (with @Injectable decorator)
+2. Register the class with Injector	(within the module's (provider), then all of it's registered components (declartions) will have the service)
+3. Use it in the component classes
+
+@Injectable() decorator on a service informs that this service may depend upon other services
+
+-----------------------------------------------------------------------------------------------
+
+Observable
+----------
+
+A sequence of items that arrive asynchronously over time.
+
+HttpCall - single item
+single item - Http response is the observable
+
+We process the observable and convert it to an array and supply only to the one subscribed.
+
+1. Http request from service
+2. Receive the observable and cast it to an array
+3. Subscribe to the observable from component
+4. Assign the array to local variable
+
+RxJS is the external library to work with observables.
+
+@Injectable
+export class EmployeeService {
+	private _url: string= '/assets/data/employees.json';
+	
+	constructor(private http: HttpClient) {}
+
+	getEmployees: Observable<Employee[]>{
+		return this.http.get<Employee[]>(this._url)
+		.catch(this.errorHandler);
+	};
+	
+	errorHandler(error: HttpErrorResponse) {
+		return Observable.throw(error.message || 'Server Error!!!')
+	}
+}
+
+EmployeeComponent.ts
+--------------------
+
+ngOnInIt() {
+	this.employeeService.getEmployees()
+		.subscribe(data => this.employeeArr= data,
+					error => this.errorMsg= error);
+		
+}	
+
+
+-------------------------------------------------------------------------------------
+
+
+Routing
+-------
+
+> ng new routing-example --routing
+
+app-routing-module.ts
+---------------------
+Configure routes
+
+const routes: Routes= [
+	{path:'/', redirectTo: '/department', pathMatch: 'full'}, -> prefix, postfix, full match of url
+	{path:'employees', component: EmployeeComponent},
+	{path:'department', component: DeptComponent, children:[
+				{path:'IncomeTax', component: IncomeComponent},
+				{path: 'Industrial', component: IndustrialComponent}
+			]
+	},
+	{path:'/**', component: PageNotFoundComponent}
+]
+
+@NgModule({
+	imports: [RouterModule.forRoot(routes)],
+	exports: [RouterModule]
+});
+
+AppModule.ts
+------------
+
+imports: [AppRoutingModule]
+
+AppComponent Template
+---------------------
+<a routerLink="/employees" routerLinkActive="activeClass">Employees</a>
+<a routerLink="/department" routerLinkActive="activeClass">Department</a>
+
+<router-outlet></router-outlet>
+
+-------------------------------------------------------------------------
+
+Routing with params
+-------------------
+{path:'department/:id', component: DeptDetailComponent}
+
+
+DepartmentComponent.ts
+----------------------
+
+constructor(private router:Router){}
+
+When some dept is clicked
+-------------------------
+<li (click)= "onSelect(dept)" *ngFor="let dept of departments">{{dept.name}}</li>
+
+onSelect(dept) {
+	this.router.navigate(["/department", dept.id]);
+}	
+
+When 3rd item is clicked, the route will navigate to /department/3
+and DeptDetailComponent is invoked
+
+
+DeptDetailComponent.ts			-> Access the id from paramMap of route snapshot
+----------------------
+
+constructor(private activeRoute:ActivatedRoute){}
+
+ngOnInit() {		-> Init only once
+	this.deptId = parseInt(this.route.snapshot.paramMap.get('id'));
+}
+
+---------------------------------------------------------------------------
+
+Drawback of route snapshot is that when you are navigating to the same component,
+say u have Next and Prev button and clicking on them gives you next and previous
+department details. This wouldn't work since we have placed the assignment in ngOnInit
+which is initialized only once...
+
+We need to use paramMap observable
+
+ngOnInit() {
+	
+	this.route.snapshot.paramMap.subscribe((param: ParamsMap) => this.deptId= parseInt(param.get('id')));
+}
+
+Now angular would know about the change and update the component template
+
+------------------------------------------------------------------------------
+
+Optional Route Parameter
+------------------------
+Passing the parameters to the route
+
+goBackToDepartments() {
+	let selectedId = this.deptId ? this.deptId : null;
+	this.router.navigate(["/department", {'id': selectedId, 'name':'backToDept'}]);	-> Optional Parameters as an object
+}	
+
+Accessing rhe parameters is from route.snapshot.paramsMap
+
+---------------------------------------------------------------------------------
+
+Relative paths
+--------------
+
+Use relative paths incase ur paths may change in the future.
+
+onSelect(dept) {
+	this.router.navigate([dept.id], {relativeTo: this.route}); -> relative to this route append dept.id
+}
+
+
+goBackToDepartments() {
+	let selectedId = this.deptId ? this.deptId : null;
+	this.router.navigate(["../", {'id': selectedId, 'name':'backToDept'}], {relativeTo: this.route});	
+}	
+
+------------------------------------------------------------------------------------
+
+Angular-FormsModule
+-------------------
+
+use form tag
+
+use template reference variable on the form tag ex: userForm
+
+use ngModel for each form element that you want to capture data in the form
+
+for angular to capture each form element data use name attribute
+
+using the name attribute, angular will map for each element, the {name: value} pair to an object
+
+use ngModelGroup="nameOfTheGroup" for capturing a group of elements as an object like address element contains state, city, pincode
+{name1:value1, name2:value2, ... ,"address": {"state":"", "city":""...}}
+
+we can view form elements info in the view using template reference variable we declared on form tag 
+{{userForm.value | json}} 
+
+-----------------------------------------------------------------------------
+for the form elements to be mapped to a model
+
+create a model ex: user.ts -> create a constructor with all the fields with variable name same as the name given to each form element u want to bind
+
+create a reference for the model inside the component
+
+2-way binding needs to be done in the view with the help of [(ngModel)]="userModel.firstName"...
+
+
+Control state and validity
+--------------------------
+Class if true  Class if true		State
+ng-touched 		ng-untouched 		The control has been visited
+ng-dirty		ng-pristine			changed
+ng-valid		ng-invalid			valid value
+
+We can print these classes of any element using template reference variable declared on each element
+
+<div class="form-group">
+	<label>First Name</label>
+	<input type="text" #name required class="form-control" name="firstName" [(ngModel)]="userModel.fName">
+</div>
+
+{{name.className}} -> form-control ng-untouched ng-pristine ng-valid
+
+-------------------------------------------------------------------------------------
+
+Form Validation
+---------------
+
+can be of 2 types
+1. Template Driven Form	-> Template driven approach		-> heavy template
+2. Reactive 			-> Model driven approach		-> heavy model
+
+1. Template driven approach
+---------------------------
+
+we can add required attribute on each form-element if it is mandatory
+
+ngModel properties
+------------------
+Class			property
+ng-pristine		pristine
+ng-touched		touched
+ng-untouched		untouched
+ng-valid		valid
+ng-invalid		invalid
+ng-dirty		dirty
+
+Accessing the properties of an element can be done using template reference variable pointing to ngModel of the element
+#name="ngModel"
+
+{{name.dirty}}
+
+is-invalid is the class that is used to set the form-control as red border showing it is invalid
+We apply this class only when the form-control has property invalid and touched property as true
+
+<div class="form-group">
+	<label>First Name</label>
+	<input type="text" #name="ngModel" required class="form-control" name="firstName" [(ngModel)]="userModel.fName"
+						 [class.is-invalid]="name.invalid && name.touched">
+	<small class="text-danger" [class.d-none]="name.valid || name.untouched">*Name is mandatory</small>
+</div>
+
+
+To be more specific in error message we can use "errors" property on form-element
+
+ex: Phone
+
+<div class="form-group">
+	<label>Phone</label>
+	<input type="text" #phone="ngModel" required pattern="^\d{10}$"
+							class="form-control" name="phone" [(ngModel)]="userModel.phone"
+						 [class.is-invalid]="phone.invalid && phone.touched">
+	<!--<small class="text-danger" [class.d-none]="phone.valid || phone.untouched">*Phone is mandatory and must be 10 digits</small>-->
+	<div *ngIf="phone.errors && (phone.invalid || phone.touched)">
+		<small class="text-danger" *ngIf="phone.errors.required">Phone number is mandatory</small>
+		<small class="text-danger" *ngIf="phone.errors.pattern">Phone number must be 10 digits</small>
+	</div>
+</div>
+
+--------------------------------------------------------------------------------------
+
+Validation for select control
+-----------------------------
+We can use required attribute if the default value is empty it will work, 
+but for default value not empty then it won't work
+
+for select box we can have (click)="validateSelectBox(topic.value)" (change)= "validateSelectBox(topic.value)"
+
+[class.is-invalid]="topicHasError && topic.touched"
+
+<small class="text-danger" [class.d-none]="!topicHasError || topic.untouched">Please select a value</small>
+
+----------------------------------------------------------
+
+Form level validation
+---------------------
+
+When we create a form tag angular automatically attached an ngForm directive to the form tabindex
+We can access that directive using template reference valiable="ngForm"
+
+<form #userForm="ngForm">
+</form>
+
+We can have access to the properties of the directive using the ref var
+
+{{ userForm.form.valid }} - Valid/Invalid based on the form-elements valid/invalid
+Based on this property we can enable/disable Submit button
+
+--------------------------------------------------------------
+
+Post the form data to the server
+--------------------------------
+
+<form #userForm="ngForm" ngSubmit="onSubmit()" novalidate> -> novalidate stops browser validation to kick in
+</form>
+
+Form elements are mapped to the model created in the component with below on each element
+[(ngModel)]="userModel.phone"
+
+onSubmit() {
+	console.log(this.userModel);
+	this._enrollmentService.enroll(this.userModel)
+	.subscribe(data => console.log("Success!", data),
+				error => console.error("Error!", error));
+}
+
+
+--------------------------------------------------------------------------------------------------------------------
+
+2. Reactive approach
+--------------------
+
+Much of the code resides in component
+More coding required
+Dynamic form controls based on some conditions
+No 2-way binding
+Well suited for complex scenarios
+Unit testing is easy since code resides in ts file
+Conditional validation is easy
+
+<form #userForm="ngForm" ngSubmit="onSubmit(userForm)">	-> Pass the ngForm object to the component and print it
+.fname
+.address
+.phone
+</form>
+
+there are lot of properties on the ngForm object
+One of the props is form of type "FormGroup"
+contains the model containing the form-control and their props
+
+ex: ngForm -> form(FormGroup) -> controls -> fname(FormControl) -> validator:..., pristine: true, untouched: true ...
+
+FormGroup and FormControl are the basic building blocks of Reactive approach
+
+---------------------
+
+import {ReactiveFormsModule} from '@angular/forms' in module
+
+In the component class, create a FormGroup instance with the FormControl instances for each form control
+
+registrationForm = new FormGroup({
+	firstName: new FormControl('defaultName'),
+	password: new FormControl(''),
+	confirmPassword: new FormControl(''),
+});
+
+Use formGroup and formControlName directives to map the model to the view
+
+<form [formGroup]="registrationForm">
+	<div class="form-group">
+		<label>First Name</label>
+		<input type="text" formControlName="firstName" class="form-control">
+	</div>
+	<div class="form-group">
+		<label>Password</label>
+		<input type="password" formControlName="password" class="form-control">
+	</div>
+	<div class="form-group">
+		<label>Confirm Password</label>
+		<input type="password" formControlName="confirmPassword" class="form-control">
+	</div>
+</form>
+
+{{ registrationForm.value | json }}
+
+------------------------------------
+
+FormGroup within the form-group
+-------------------------------
+
+Use formGroupName and formControlName
+
+registrationForm = new FormGroup({
+	firstName: new FormControl('defaultName'),
+	password: new FormControl(''),
+	confirmPassword: new FormControl(''),
+	address: new FormGroup({
+		city: new FormControl(''),
+		state: new FormControl(''),
+		pincode: new FormControl('')
+	})
+});
+
+<form [formGroup]="registrationForm">
+	<div class="form-group">
+		<label>First Name</label>
+		<input type="text" formControlName="firstName" class="form-control">
+	</div>
+	<div class="form-group">
+		<label>Password</label>
+		<input type="password" formControlName="password" class="form-control">
+	</div>
+	<div class="form-group">
+		<label>Confirm Password</label>
+		<input type="password" formControlName="confirmPassword" class="form-control">
+	</div>
+	<div formGroupName= "address">
+		<div class="form-group">
+			<label>City</label>
+			<input type="text" formControlName="city" class="form-control">
+		</div>
+		<div class="form-group">
+			<label>State</label>
+			<input type="text" formControlName="state" class="form-control">
+		</div>
+		<div class="form-group">
+			<label>Pincode</label>
+			<input type="text" formControlName="pincode" class="form-control">
+		</div>
+	</div>
+</form>
+----------------------------------------------------------
+
+setValue() -> Very strict -> requires all form control values
+
+this.registrationForm.setValue({
+	firstName: 'defaultName',
+	password: 'defaultPwd',
+	confirmPassword: 'defaultPwd',
+	address: {
+		city: 'City',
+		state: 'State',
+		pincode: '123456'
+	})
+})
+
+In order to supply only some props use patchValue
+
+this.registrationForm.patchValue({
+	firstName: 'defaultName',
+	password: 'defaultPwd',
+	confirmPassword: 'defaultPwd'
+})
+
+--------------------------------------
+
+FormBuilder
+-----------
+
+is a service
+is a simpler way to create a FormGroup and FormControl instances with much less code
+
+import FormBuilder service fro @angular/forms
+
+Inject it in the constructor(private fb:FormBuilder){}
+
+registrationForm= this.fb.group({
+	firstName: ['defaultName'],
+	password: [''],
+	confirmPassword: [''],
+	address: this.fb.group({
+		city: [''],
+		state: [''],
+		pincode: ['']
+	})
+});
+
+------------------------------
+
+1. Apply the validation to a form control
+2. Provide visual feedback
+3. Provide app. feedback for the validation
+
+
+registrationForm= this.fb.group({
+	firstName: ['defaultName', [validators.required, validators.minLength(3)]],
+	password: [''],
+	confirmPassword: [''],
+	address: this.fb.group({
+		city: [''],
+		state: [''],
+		pincode: ['']
+	})
+});
+
+	<div class="form-group">
+		<label>First Name</label>
+		<input [class.is-invalid]="registrationForm.get('userName').invalid && registrationForm.get('userName').touched" 
+							type="text" formControlName="firstName" class="form-control">
+		<div>
+			<small class="text-danger" *ngIf="registrationForm.get('userName').errors?.required">*First name is mandatory</small>
+			<small class="text-danger" *ngIf="registrationForm.get('userName').errors?.minlength">Atleast 3 characters</small>
+		</div>
+	</div>
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

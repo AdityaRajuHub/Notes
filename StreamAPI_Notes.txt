@@ -1,0 +1,273 @@
+Stream API
+----------
+It is possible to instantiate a stream and to have an accessible reference to it as long as only intermediate operations were called. Executing a terminal operation makes a stream inaccessible.
+
+An attempt to reuse the same reference after calling the terminal operation will trigger the IllegalStateException:
+
+1
+Optional<String> firstElement = stream.findFirst();
+As the IllegalStateException is a RuntimeException, a compiler will not signalize about a problem. So, it is very important to remember that Java 8 streams can’t be reused.
+
+This kind of behavior is logical because streams were designed to provide an ability to apply a finite sequence of operations to the source of elements in a functional style, but not to store elements.
+
+
+Stream Pipeline
+To perform a sequence of operations over the elements of the data source and aggregate their results, three parts are needed – the source, intermediate operation(s) and a terminal operation.
+
+
+A stream by itself is worthless, the real thing a user is interested in is a result of the terminal operation, which can be a value of some type or an action applied to every element of the stream. Only one terminal operation can be used per stream.
+
+The right and most convenient way to use streams are by a stream pipeline, which is a chain of stream source, intermediate operations, and a terminal operation. For example:
+
+1
+2
+3
+List<String> list = Arrays.asList("abc1", "abc2", "abc3");
+long size = list.stream().skip(1)
+  .map(element -> element.substring(0, 3)).sorted().count();
+
+
+5. Lazy Invocation
+Intermediate operations are lazy. This means that they will be invoked only if it is necessary for the terminal operation execution.
+
+To demonstrate this, imagine that we have method wasCalled(), which increments an inner counter every time it was called:
+
+private long counter;
+  
+private void wasCalled() {
+    counter++;
+}
+Let’s call method wasCalled() from operation filter():
+
+List<String> list = Arrays.asList(“abc1”, “abc2”, “abc3”);
+counter = 0;
+Stream<String> stream = list.stream().filter(element -> {
+    wasCalled();
+    return element.contains("2");
+});
+As we have a source of three elements we can assume that method filter() will be called three times and the value of the counter variable will be 3. But running this code doesn’t change counter at all, it is still zero, so, the filter() method wasn’t called even once. The reason why – is missing of the terminal operation.
+
+Let’s rewrite this code a little bit by adding a map() operation and a terminal operation – findFirst(). We will also add an ability to track an order of method calls with a help of logging:
+
+Optional<String> stream = list.stream().filter(element -> {
+    log.info("filter() was called");
+    return element.contains("2");
+}).map(element -> {
+    log.info("map() was called");
+    return element.toUpperCase();
+}).findFirst();
+
+Resulting log shows that the filter() method was called twice and the map() method just once. It is so because the pipeline executes vertically. In our example the first element of the stream didn’t satisfy filter’s predicate, then the filter() method was invoked for the second element, which passed the filter. Without calling the filter() for third element we went down through pipeline to the map() method.
+
+The findFirst() operation satisfies by just one element. So, in this particular example the lazy invocation allowed to avoid two method calls – one for the filter() and one for the map().
+
+Order of Execution
+------------------
+From the performance point of view, the right order is one of the most important aspects of chaining operations in the stream pipeline:
+
+long size = list.stream().map(element -> {
+    wasCalled();
+    return element.substring(0, 3);
+}).skip(2).count();
+
+
+long size = list.stream().skip(2).map(element -> {
+    wasCalled();
+    return element.substring(0, 3);
+}).count();
+
+Intermediate operations which reduce the size of the stream should be placed before operations which are applying to each element. So, keep such methods as skip(), filter(), distinct() at the top of your stream pipeline.
+
+
+The reduce() Method
+-------------------
+There are three variations of this method, which differ by their signatures and returning types. They can have the following parameters:
+
+identity – the initial value for an accumulator or a default value if a stream is empty and there is nothing to accumulate;
+
+accumulator – a function which specifies a logic of aggregation of elements. As accumulator creates a new value for every step of reducing, the quantity of new values equals to the stream’s size and only the last value is useful. This is not very good for the performance.
+
+combiner – a function which aggregates results of the accumulator. Combiner is called only in a parallel mode to reduce results of accumulators from different threads.
+
+So, let’s look at these three methods in action:
+
+1
+2
+OptionalInt reduced =
+  IntStream.range(1, 4).reduce((a, b) -> a + b);
+reduced = 6 (1 + 2 + 3)
+
+1
+2
+int reducedTwoParams =
+  IntStream.range(1, 4).reduce(10, (a, b) -> a + b);
+reducedTwoParams = 16 (10 + 1 + 2 + 3)
+
+1
+2
+3
+4
+5
+int reducedParams = Stream.of(1, 2, 3)
+  .reduce(10, (a, b) -> a + b, (a, b) -> {
+     log.info("combiner was called");
+     return a + b;
+  });
+The result will be the same as in the previous example (16) and there will be no login which means, that combiner wasn’t called. To make a combiner work, a stream should be parallel:
+
+1
+2
+3
+4
+5
+int reducedParallel = Arrays.asList(1, 2, 3).parallelStream()
+    .reduce(10, (a, b) -> a + b, (a, b) -> {
+       log.info("combiner was called");
+       return a + b;
+    });
+The result here is different (36) and the combiner was called twice. Here the reduction works by the following algorithm: accumulator ran three times by adding every element of the stream to identity to every element of the stream. These actions are being done in parallel. As a result, they have (10 + 1 = 11; 10 + 2 = 12; 10 + 3 = 13;). Now combiner can merge these three results. It needs two iterations for that (12 + 13 = 25; 25 + 11 = 36).
+
+
+ The collect() Method
+-----------------------
+Reduction of a stream can also be executed by another terminal operation – the collect() method. It accepts an argument of the type Collector, which specifies the mechanism of reduction. There are already created predefined collectors for most common operations. They can be accessed with the help 
+of the Collectors type.
+
+List<String> collectorCollection = 
+  productList.stream().map(Product::getName).collect(Collectors.toList());
+
+String listToString = productList.stream().map(Product::getName)
+  .collect(Collectors.joining(", ", "[", "]"));
+The joiner() method can have from one to three parameters (delimiter, prefix, suffix).
+
+Processing the average value of all numeric elements of the stream:
+
+double averagePrice = productList.stream()
+  .collect(Collectors.averagingInt(Product::getPrice));
+Processing the sum of all numeric elements of the stream:
+
+int summingPrice = productList.stream()
+  .collect(Collectors.summingInt(Product::getPrice));
+Methods averagingXX(), summingXX() and summarizingXX() can work as with primitives (int, long, double) as with their wrapper classes (Integer, Long, Double). One more powerful feature of these methods is providing the mapping. So, developer doesn’t need to use an additional map() operation before the collect() method.
+
+
+Collecting statistical information about stream’s elements:
+------------------------------------------------------------
+
+IntSummaryStatistics statistics = productList.stream()
+  .collect(Collectors.summarizingInt(Product::getPrice));
+By using the resulting instance of type IntSummaryStatistics developer can create a statistical report by applying toString() method. The result will be a String common to this one “IntSummaryStatistics{count=5, sum=86, min=13, average=17,200000, max=23}”.
+
+It is also easy to extract from this object separate values for count, sum, min, average by applying methods getCount(), getSum(), getMin(), getAverage(), getMax(). All these values can be extracted from a single pipeline.
+
+Grouping of stream’s elements according to the specified function:
+---------------------------------------------------------------------
+
+Map<Integer, List<Product>> collectorMapOfLists = productList.stream()
+  .collect(Collectors.groupingBy(Product::getPrice));
+In the example above the stream was reduced to the Map which groups all products by their price.
+
+
+Dividing stream’s elements into groups according to some predicate:
+-------------------------------------------------------------------
+
+Map<Boolean, List<Product>> mapPartioned = productList.stream()
+  .collect(Collectors.partitioningBy(element -> element.getPrice() > 15));
+  
+  
+  
+  
+Custom collector:
+---------------------
+
+If for some reason, a custom collector should be created, the most easier and the less verbose way of doing so – is to use the method of() of the type Collector.
+
+Collector<Product, ?, LinkedList<Product>> toLinkedList =
+  Collector.of(LinkedList::new, LinkedList::add, 
+    (first, second) -> { 
+       first.addAll(second); 
+       return first; 
+    });
+ 
+LinkedList<Product> linkedListOfPersons =
+  productList.stream().collect(toLinkedList);
+In this example, an instance of the Collector got reduced to the LinkedList<Persone>.
+
+
+----------------------------------------------------------------------------------------------------
+
+Parallel Streams
+-----------------
+Before Java 8, parallelization was complex. Emerging of the ExecutorService and the ForkJoin simplified developer’s life a little bit, but they still should keep in mind how to create a specific executor, how to run it and so on. Java 8 introduced a way of accomplishing parallelism in a functional style.
+
+The API allows creating parallel streams, which perform operations in a parallel mode. When the source of a stream is a Collection or an array it can be achieved with the help of the parallelStream() method:
+
+Stream<Product> streamOfCollection = productList.parallelStream();
+boolean isParallel = streamOfCollection.isParallel();
+boolean bigPrice = streamOfCollection
+  .map(product -> product.getPrice() * 12)
+  .anyMatch(price -> price > 200);
+If the source of stream is something different than a Collection or an array, the parallel() method should be used:
+
+IntStream intStreamParallel = IntStream.range(1, 150).parallel();
+boolean isParallel = intStreamParallel.isParallel();
+Under the hood, Stream API automatically uses the ForkJoin framework to execute operations in parallel. By default, the common thread pool will be used and there is no way (at least for now) to assign some custom thread pool to it. This can be overcome by using a custom set of parallel collectors.
+
+When using streams in parallel mode, avoid blocking operations and use parallel mode when tasks need the similar amount of time to execute (if one task lasts much longer than the other, it can slow down the complete app’s workflow).
+
+The stream in parallel mode can be converted back to the sequential mode by using the sequential() method:
+
+IntStream intStreamSequential = intStreamParallel.sequential();
+boolean isParallel = intStreamSequential.isParallel();s
+Conclusions
+The Stream API is a powerful but simple to understand set of tools for processing sequence of elements. It allows us to reduce a huge amount of boilerplate code, create more readable programs and improve app’s productivity when used properly.
+
+In most of the code samples shown in this article streams were left unconsumed (we didn’t apply the close() method or a terminal operation). In a real app, don’t leave an instantiated streams unconsumed as that will lead to memory leaks.
+
+
+------------------------------------------------------------------------------
+Flatmap vs map
+--------------
+
+ boils down to your initial question: what you mean by flattening ?
+ flatMap() is the combination of a map and a flat operation i.e, it first applies map function and than flattens the result. Let us consider some examples to understand what exactly flattening a stream is.
+ 
+Example 1 :
+The list before flattening :
+
+[ [2, 3, 5], [7, 11, 13], [17, 19, 23] ]
+The list has 2 levels and consists of 3 small lists. After Flattening, it gets transformed into “one level” structure as shown :
+
+[ 2, 3, 5, 7, 11, 13, 17, 19, 23 ] 
+
+In short, we can say that if there is a Stream of List of <<Data Type>> before flattening, then on applying flatMap(), Stream of <<Data Type>> is returned after flattening.
+
+ List<Integer> listofInts  = listOfListofInts.stream() 
+                                    .flatMap(list -> list.stream()) 
+                                    .collect(Collectors.toList()); 
+
+When you use flatMap, a "multi-dimensional" collection becomes "one-dimensional" collection.
+
+val array1d = Array ("1,2,3", "4,5,6", "7,8,9")  
+//array1d is an array of strings
+
+val array2d = array1d.map(x => x.split(","))
+//array2d will be : Array( Array(1,2,3), Array(4,5,6), Array(7,8,9) )
+
+val flatArray = array1d.flatMap(x => x.split(","))
+//flatArray will be : Array (1,2,3,4,5,6,7,8,9)
+You want to use a flatMap when,
+
+your map function results in creating multi layered structures
+but all you want is a simple - flat - one dimensional structure, by removing ALL the internal groupings
+
+----------------------------------------------------------------------------------------------------------
+
+List<Product> prodList= new ArrayList<Product>();
+for(int i=1;i<=10;i++) {
+	prodList.add(new Product("Prod"+i, (float)(i+10.00), Arrays.asList("groceries"+i, "general"+i)));
+}
+		
+Stream<String> typesStream= prodList.stream().flatMap(t -> t.getTypes().stream()); //map(Stream<List<Product>>) -> Stream<List<String>> -> flat(Stream<List<String>>) -> List<String>
+
+----------------------------------------------------------------------------------------------------------

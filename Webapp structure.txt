@@ -1,0 +1,5 @@
+Webapps -> jsp, web, web-inf, meta-inf, index.html
+web -> css, images, javascript, stylesheets
+web-inf -> classes, libraries, custom.tld, web.xml
+classes (default classpath)-> class files, xml, schemas, properties, velocity (.vm) 
+			xml -> applicationContext.xml, beans.xml

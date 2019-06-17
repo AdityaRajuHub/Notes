@@ -1,0 +1,186 @@
+Mutilthreading
+--------------
+means running 2 (or more) threads concurrently.
+
+By default, there is a single thread called main which is used to run our program.
+
+Java is by default synchronous, but we can make it behave asynchronous.
+
+Instead of mainThread waiting for something to return we can create another thread and assign the waiting job to it,
+the main thread will continue with the remaining statements after it.
+
+We group each dependant logic together and assign it to a thread, that way independant blocks of code can be run concurrently.
+
+True parallelism occurs when we have 2 (or more) threads running simultaneously which is possible if we have 2 (or more) cores of CPU.
+
+------------------------------------------------------------------------
+
+To create a thread extend Thread class / implement Runnable interface
+
+implement run() method and write logic
+
+Thread t1= new Thread(Runnable r);
+
+//using Lambda expression
+Thread t1= new Runnable(() -> {
+	//implement run() method here
+});
+
+invoke start() method on Thread class to run the thread
+
+Pi - independant block of code i that can run in parallel with other independant Pj
+Si - block of serial code i that depends on previous/next block
+Ti - thread assigned to block i
+
+P1, P2, P3 -> T1, T2, T3
+T1.join();
+T2.join();
+T3.join();
+//only after T1, T2, T3 has finished the below dependant code will be executed
+S1 -> main thread executes S1 and S2 in sequence because they are dependant
+S2 -> main thread
+
+
+when we call wait() – this forces the current thread to wait until some other thread invokes notify() or notifyAll() on the same object.
+The wait() Method
+-----------------
+Simply put, when we call wait() – this forces the current thread to wait until some other thread invokes notify() or notifyAll() on the same object.
+
+For this, the current thread must own the object’s monitor. According to Javadocs, this can happen when:
+
+we’ve executed synchronized instance method for the given object
+we’ve executed the body of a synchronized block on the given object
+by executing synchronized static methods for objects of type Class
+Note that only one active thread can own an object’s monitor at a time.
+
+This wait() method comes with three overloaded signatures. Let’s have a look at these.
+
+
+The notify() method
+-------------------
+For all threads waiting on this object’s monitor (by using any one of the wait() method), the method notify() notifies any one of them to wake up arbitrarily. The choice of exactly which thread to wake is non-deterministic and depends upon the implementation.
+
+Since notify() wakes up a single random thread it can be used to implement mutually exclusive locking where threads are doing similar tasks, but in most cases, it would be more viable to implement notifyAll().
+
+notifyAll()
+-----------
+This method simply wakes all threads that are waiting on this object’s monitor.
+
+The awakened threads will complete in the usual manner – like any other thread.
+
+But before we allow their execution to continue, always define a quick check for the condition required to proceed with the thread – because there may be some situations where the thread got woken up without receiving a notification (this scenario is discussed later in an example).
+
+Ex:
+
+package com.generics;
+
+public class ThreadsDemo {
+
+	public static void main(String[] args) {
+		Q q = new Q();
+		new Producer(q);
+		new Consumer(q);
+	}
+}
+
+class Q {
+
+	int num=0;
+	boolean produced= false;
+
+	synchronized void produce() throws InterruptedException {
+		if(!produced) {
+			num++;
+			System.out.println("Produced..."+num);
+			produced= true;
+			notify();
+		} else {
+			System.out.println("Waiting for consumer to consume...");
+			wait();
+		}
+	}
+
+	synchronized void consume() throws InterruptedException {
+		if(produced) {
+			num--;
+			System.out.println("Consumed..."+num);
+			produced= false;
+			notify();
+		} else {
+			System.out.println("Waiting for producer to produce...");
+			wait();
+		}
+	}
+}
+
+class Producer implements Runnable{
+
+	Q q;
+
+	Producer(Q q) {
+		this.q= q;
+		Thread t1= new Thread(this, "Producer");
+		t1.start();
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		while(true) {
+			try {
+				q.produce();
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				//e1.printStackTrace();
+			}
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+			}
+		}
+	}
+
+}
+
+class Consumer implements Runnable {
+
+	Q q;
+
+	Consumer(Q q) {
+		this.q= q;
+		Thread t1= new Thread(this, "Consumer");
+		t1.start();
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		while(true) {
+			try {
+				q.consume();
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				//e1.printStackTrace();
+			}
+			try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+			}
+		}
+	}
+
+}
+
+Why Enclose wait() in a while Loop?
+Since notify() and notifyAll() randomly wakes up threads that are waiting on this object’s monitor, 
+it’s not always important that the condition is met. 
+Sometimes it can happen that the thread is woken up, but the condition isn’t actually satisfied yet.
+
+We can also define a check to save us from spurious wakeups – where a thread can wake up from waiting without ever having received a notification
+
+Why Do We Need to Synchronize send() and receive() Methods?
+We placed these methods inside synchronized methods to provide intrinsic locks. If a thread calling wait() method does not own the inherent lock, an error will be thrown.
+
+
+
+--------------------------------------------

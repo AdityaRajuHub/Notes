@@ -1,0 +1,44 @@
+
+
+
+DelegatingPasswordEncoder is the default password encoder
+-------------------------
+public class DelegatingPasswordEncoder
+extends java.lang.Object
+implements PasswordEncoder
+A password encoder that delegates to another PasswordEncoder based upon a prefixed identifier.
+Constructing an instance
+You can easily construct an instance using PasswordEncoderFactories. Alternatively, you may create your own custom instance. For example:
+ String idForEncode = "bcrypt";
+ Map encoders = new HashMap<>();
+ encoders.put(idForEncode, new BCryptPasswordEncoder());
+ encoders.put("noop", NoOpPasswordEncoder.getInstance());
+ encoders.put("pbkdf2", new Pbkdf2PasswordEncoder());
+ encoders.put("scrypt", new SCryptPasswordEncoder());
+ encoders.put("sha256", new StandardPasswordEncoder());
+
+ PasswordEncoder passwordEncoder = new DelegatingPasswordEncoder(idForEncode, encoders);
+ 
+Password Storage Format
+The general format for a password is:
+ {id}encodedPassword
+ 
+Such that "id" is an identifier used to look up which PasswordEncoder should be used and "encodedPassword" is the original encoded password for the selected PasswordEncoder. The "id" must be at the beginning of the password, start with "{" and end with "}". If the "id" cannot be found, the "id" will be null. For example, the following might be a list of passwords encoded using different "id". All of the original passwords are "password".
+ {bcrypt}$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG
+ {noop}password
+ {pbkdf2}5d923b44a6d129f3ddf3e3c8d29412723dcbde72445e8ef6bf3b508fbf17fa4ed4d6b99ca763d8dc
+ {scrypt}$e0801$8bWJaSu2IKSn9Z9kM+TPXfOc/9bdYSrN1oD9qfVThWEwdRTnO7re7Ei+fUZRJ68k9lTyuTeUp4of4g24hHnazw==$OAOec05+bXxvuu/1qZ6NUR+xQYvYv7BeL1QxwRpY5Pc=
+ {sha256}97cde38028ad898ebc02e690819fa220e88c62e0699403e94fff291cfffaf8410849f27605abcbc0
+ 
+For the DelegatingPasswordEncoder that we constructed above:
+The first password would have a PasswordEncoder id of "bcrypt" and encodedPassword of "$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG". When matching it would delegate to BCryptPasswordEncoder
+The second password would have a PasswordEncoder id of "noop" and encodedPassword of "password". When matching it would delegate to NoOpPasswordEncoder
+The third password would have a PasswordEncoder id of "pbkdf2" and encodedPassword of "5d923b44a6d129f3ddf3e3c8d29412723dcbde72445e8ef6bf3b508fbf17fa4ed4d6b99ca763d8dc". When matching it would delegate to Pbkdf2PasswordEncoder
+The fourth password would have a PasswordEncoder id of "scrypt" and encodedPassword of "$e0801$8bWJaSu2IKSn9Z9kM+TPXfOc/9bdYSrN1oD9qfVThWEwdRTnO7re7Ei+fUZRJ68k9lTyuTeUp4of4g24hHnazw==$OAOec05+bXxvuu/1qZ6NUR+xQYvYv7BeL1QxwRpY5Pc=" When matching it would delegate to SCryptPasswordEncoder
+The final password would have a PasswordEncoder id of "sha256" and encodedPassword of "97cde38028ad898ebc02e690819fa220e88c62e0699403e94fff291cfffaf8410849f27605abcbc0". When matching it would delegate to StandardPasswordEncoder
+Password Encoding
+The idForEncode passed into the constructor determines which PasswordEncoder will be used for encoding passwords. In the DelegatingPasswordEncoder we constructed above, that means that the result of encoding "password" would be delegated to BCryptPasswordEncoder and be prefixed with "{bcrypt}". The end result would look like:
+ {bcrypt}$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG
+ 
+Password Matching
+Matching is done based upon the "id" and the mapping of the "id" to the PasswordEncoder provided in the constructor. Our example in "Password Storage Format" provides a working example of how this is done. By default the result of invoking matches(CharSequence, String) with a password with an "id" that is not mapped (including a null id) will result in an IllegalArgumentException. This behavior can be customized using setDefaultPasswordEncoderForMatches(PasswordEncoder).
