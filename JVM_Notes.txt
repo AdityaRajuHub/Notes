@@ -1,4 +1,71 @@
+JVM
+---
+
+Responsible for converting java file to bytecode and then bytecode is sent as Native OS method calls.
+
+The life cycle journey of Java class file: 
+-----------------------------------------
+
+JVM Consists of 
+
+1. Class Loader - (Load app's .class files)
+
+2. Execution engine - execute byte code
+
+Class Loading subsystem consists of 3 phases
+
+1. Load
+	a. Application class loader (classpath, -cp)
+	b. Extension class loader (load files from jre/lib/ext)
+	c. Bootstrap class loader (load class files from app, core java classes)
+
+2. Link
+	a. Verify  (Verify bytecode is valid) - ensures that it adheres to the semantics of the language and does not disrupt the integrity of JVM
+	b. Prepare (Class variables to default values) - JVM allocates memory for the class variables and initializes them to 
+			default values according to the type of the variable. The actual initialization (with user-defined initialization values), 
+			however, does not occur until the next initialization phase.
+			Ex: int to 0 and string to null
+	c. Resolve (Symbolic linking) - since all the class files are already loaded in memory, symbolic reference is resolved by actual memory address.
+
+3. Initialize (Static block is executed and memory allocated) - variables are assigned with user-defined values
+		- Initialize class variables with the routine specified by the programmer.
+		- Initialize its super classes if it is not already initialized.
+
+ClassNotFoundException occurs during Loading phase
+NoClassDefFoundError   occurs during Linking phase
+
+Difference
+----------
+ClassNotFoundException is an exception that occurs when you try to load a class at run time using 
+Class.forName() or loadClass() methods and mentioned classes are not found in the classpath.
+
+NoClassDefFoundError is an error that occurs when a particular class is present at compile time, but was missing at run time.
+
+class A
+{
+  // some code
+}
+public class B
+{
+    public static void main(String[] args)
+    {
+        A a = new A();
+    }
+}
+
+A.class and B.class are compiled, but if A.class is not available in classpath, then it will result in exception.
+
+-------------------------------------------------------
+
+Execution engine
+-----------------
+1. Interpreter - looks at bytecode and interprets which OS native method to invoke
+2. JIT
+3. Hotspot profiler
+4. GC
+
 What is a JIT Compiler
+----------------------
 Let’s first explain what JIT compiler does.
 
 When we compile our Java program (e.g., using the javac command), we’ll end up with our source code compiled into the binary representation of our code – a JVM bytecode. This bytecode is simpler and more compact than our source code, but conventional processors in our computers cannot execute it.
@@ -37,3 +104,44 @@ The Graal compiler was created with those advantages in mind. It uses the new JV
 1
 -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler
 What this means is that we can run a simple program in three different ways: with the regular tiered compilers, with the JVMCI version of Graal on Java 10 or with the GraalVM itself.
+----------------------------------------------------
+
+Java Memory Model
+-----------------
+
+ALl the memory allocations reside in JVM
+
+1. Heap space 			- Dynamic memory 	- Objects
+2. PermGen space(Method area)	- Static memory	 	- Loaded Classes, Static (variables, methods)	- OutofMemoryError based on MaxPermsize allocated
+   Java 8- Metaspace 		- Physical memory	- Memory allocated in RAM, managed by OS  	- OutofMemoryError doesn't happen
+3. Stack(1 stack/thread)	- Stack memory	 	- function calls, function variables		- StackOverflowError
+4. Native method stack		- Native Stack memory	- OS native method calls (.dll)			- StackOverflowError
+5. PC registers(1/stack)	- Cache memory	 	- holds the current instruction address in the stack
+
+Heap space is again divided into 
+1. Young generation space
+2. Old generation space
+
+Young generation is where new Objects arrive. Internally has 3 divisions based on how much time an object is live and being referenced inside the program, 
+1. EdenSpace
+2. FromSpace (Survivor1)
+3. ToSpace (Survivor2)
+4. Old Generation - most live objects
+
+Finally it moves to Old generation where it is most likely to be used in the future as well.
+
+Memory specifications:
+----------------------
+
+Heap: 	-Xmx -Xms
+PermGen:-XX:PermSize -XX:MaxPermSize
+Stack: 	-Xss
+
+
+Garbage collection strategy
+---------------------------
+1. Marking
+2. Deletion
+3. Deletion + Compacting
+
+-----------------------------------------------------------------------------------------------------------
