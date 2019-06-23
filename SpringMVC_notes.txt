@@ -32,17 +32,24 @@ CMI:
 	</servlet-mapping>
 	
 	
-I haven't shown here but, DispatcherServlet is also usually preloaded using the load-on-startup tag of the deployment descriptor. You can give zero or positive value on this tag to pre-load a servlet, otherwise, the servlet will only be loaded when a request will arise.
+I haven't shown here but, DispatcherServlet is also usually preloaded using the load-on-startup tag of the deployment descriptor. 
+You can give zero or positive value on this tag to pre-load a servlet, otherwise, the servlet will only be loaded when a request will arise.
 
-If your servlet does a lot of job on initialization e.g. DispatcherServlet which initializes all the beans declared in its web context e.g. controllers, view resolvers, and mapping handlers then it could slow down the response time.
+If your servlet does a lot of job on initialization e.g. DispatcherServlet which initializes all the beans declared in its web context 
+e.g. controllers, view resolvers, and mapping handlers then it could slow down the response time.
 
 
 
-Btw, it's not the only way to declare DispatcherServlet in Spring MVC. From Spring 3.2 and Servlet 3.0 specification, you can programmatically declare DispatcherServlet using ServletContainerInitializer interface. This is a Servlet 3,0 feature which allows Servlet 3.0 compliant containers  e.g. Tomcat 7 or higher to scan and load any class which implements this interface.
+Btw, it's not the only way to declare DispatcherServlet in Spring MVC. From Spring 3.2 and Servlet 3.0 specification, 
+you can programmatically declare DispatcherServlet using ServletContainerInitializer interface. 
+This is a Servlet 3,0 feature which allows Servlet 3.0 compliant containers  
+e.g. Tomcat 7 or higher to scan and load any class which implements this interface.
 
-Spring provides an implementation of this interface as SpringServletContainerInitializer and a convenient class called AbstractAnnotationConfigDispatcherServletInitialzer in Spring 3.2 to configure DispatcherServlet without deployment descriptor.
+Spring provides an implementation of this interface as SpringServletContainerInitializer and a convenient class called 
+AbstractAnnotationConfigDispatcherServletInitialzer in Spring 3.2 to configure DispatcherServlet without deployment descriptor.
 
-This class implements SpringServletContainerInitializer hence automatically picked by Servlet 3.0 compliant containers. See Spring in Action 4th Edition to know more about configuring DispatcherServlet using Java Configuration. 
+This class implements SpringServletContainerInitializer hence automatically picked by Servlet 3.0 compliant containers. See Spring in 
+Action 4th Edition to know more about configuring DispatcherServlet using Java Configuration. 
 
 
 View Resolver
@@ -54,3 +61,6 @@ CMI:
 		<property name="prefix" value="/jsp/" />
 		<property name="suffix" value=".jsp" />
 	</bean> 	
+	
+With Spring boot, for the jsp to be rendered in the browser we need to add jasper dependancy in the classpath,
+otherwise the jsp would just be downloaded.
