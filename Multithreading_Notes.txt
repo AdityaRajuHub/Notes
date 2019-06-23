@@ -171,14 +171,21 @@ class Consumer implements Runnable {
 
 }
 
-Why Enclose wait() in a while Loop?
+1. Why Enclose wait() in a while Loop?
+-----------------------------------
 Since notify() and notifyAll() randomly wakes up threads that are waiting on this object’s monitor, 
 it’s not always important that the condition is met. 
 Sometimes it can happen that the thread is woken up, but the condition isn’t actually satisfied yet.
 
-We can also define a check to save us from spurious wakeups – where a thread can wake up from waiting without ever having received a notification
+2. Why use while instead of if condition
+-------------------------------------
+Spurious wakeups – where a thread can wake up from waiting without ever having received a notification
+This can happen for various reasons, so if we have an if then 
 
-Why Do We Need to Synchronize send() and receive() Methods?
+3. Why Do We Need to Synchronize send() and receive() Methods?
+-----------------------------------------------------------
+Generally we need to synchronize the methods calling wait and notify to avoid deadlocks.
+Imagine two threads enter the same method at once and they both call wait and are blocked on the same object forever.
 We placed these methods inside synchronized methods to provide intrinsic locks. If a thread calling wait() method does not own the inherent lock, an error will be thrown.
 
 
