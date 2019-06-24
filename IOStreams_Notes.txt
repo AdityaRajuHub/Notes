@@ -1,29 +1,42 @@
+Java's IO package mostly concerns itself with the reading of raw data from a source and writing of raw data to a destination. 
+The most typical sources and destinations of data are these:
+
+Files
+Pipes
+Network Connections
+In-memory Buffers (e.g. arrays)
+System.in, System.out, System.error
+
+A stream is a conceptually endless flow of data.
 
 A stream is a logical connection from/to a java program to/from a file.
 It's like a pipe between java and file used to transer/recieve data.
-It is connection based
+It is connection based. The connection can be to a data source or a data destination.
+Streams in Java IO can be either byte based (reading and writing bytes) or character based (2 bytes) (reading and writing characters).
 A stream that allows to send binary data is BinaryStream and stream that allows to send Character data is Character stream.
+
 						
-						 Stream
-				 ___________|___________
-				|						|
+					 Stream
+			 ___________________|___________________
+			|					|
 		BinaryStream					CharacterStream
 	___________|___________ 			___________|___________ 
-   |	                   |   		   |	                   |	
-InputStream			OutputStream	Reader					Writer
+       |                       |   		       |                       |	
+InputStream			OutputStream	    Reader	            Writer
 
 
 InputStream and Reader -> read()	-> abstract method
 OutputStream and Write -> write()	-> abstract method
 
+
 InputStream extends Object implements Closeable extends AutoCloseable -> try-with-resources
 ----------------------------------------------------------------------
 
-1. FileInputStream								- read data 1 byte at a time
+1. FileInputStream								- read data 1 byte at a time or if FileReader then 1 char at a time
 2. ByteArrayInputStream 						- read complete data in terms of byte array
 3. FilterInputStream							- read data based on filtering operation
 	|- DataInputStream 	implements DataInput	- read data in primitive sizes ex: int is 4 bytes so we use this to read 4 bytes at a time
-	|- BufferedInputStream (or BufferedReader)	- read data very fast
+	|- BufferedInputStream (or BufferedReader)	- read data as a large block at a time into an internal buffer, speeds up I/O
 4. ObjectInputStream 	implements ObjectInput	- read data one object at a time
 5. SequenceInputStream							- read data from multiple streams one by one at a time
 6. PipedInputStream								- read data one pipe at a time
@@ -42,12 +55,11 @@ OutputStream extends Object implements java.io.Closeable, java.io.Flushable
 3. FilterOutputStream
 	|- DataOutputStream	implements DataOutput
 	|- BufferedOutputStream
-	|- PrintStream
+	|- PrintStream -> for Binary data (or) PrintWriter -> for character data
 4. ObjectOutputStream	implements ObjectOutput
 5. PipedOutputStream
 
 When the data needs to be dumped from memory to the file, explicit call to flush() method needs to be called.
-
 
 Methods
 -------
@@ -115,6 +127,147 @@ Scanner scanner= new Scanner(System.in);	//System.in->InputStream->read from con
 scanner.nextLine();
 
 
+ByteArrayInputStream / ByteArrayOutputStream
+--------------------------------------------
+Arrays are also a common source or destination of data.
+Load a file into an array, if you need to access the contents of that file a lot while the program is running.
+When we have data in an array we can get read Arrays via InputStream or Reader.
+
+To read the data from an array, you will have to wrap the byte or char array in an ByteArrayInputStream or CharArrayReader. 
+This way the bytes or chars available in the array can be read through the wrapping stream or reader.
+
+	byte[] bytes = new byte[1024];	//or capture bytes from some other source
+
+	//write data into byte array...
+
+	InputStream input = new ByteArrayInputStream(bytes);
+
+	//read first byte
+	int data = input.read();
+	while(data != -1) {
+		//do something with data
+
+		//read next byte
+		data = input.read();
+	}
+
+Write to a byte/char array
+--------------------------
+
+	ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+	output.write("This text is converted to bytes".getBytes("UTF-8"));
+
+	byte[] bytes = output.toByteArray();
+	
+	
+-----------------------------------------------------------------
+DataInputStream / DataOutputStream
+----------------------------------
+
+The Java DataInputStream class enables you to read Java primitives (int, float, long etc.) 
+	from an InputStream instead of only raw bytes. 
+That is why it is called DataInputStream - because it reads data (numbers) instead of just bytes.
+
+
+public class DataInputStreamExample {
+
+    public static void main(String[] args) throws IOException {
+        DataOutputStream dataOutputStream =
+                new DataOutputStream(
+                        new FileOutputStream("data/data.bin"));
+
+        dataOutputStream.writeInt(123);
+        dataOutputStream.writeFloat(123.45F);
+        dataOutputStream.writeLong(789);
+
+        dataOutputStream.close();
+
+        DataInputStream dataInputStream =
+                new DataInputStream(
+                        new FileInputStream("data/data.bin"));
+
+        int   int123     = dataInputStream.readInt();
+        float float12345 = dataInputStream.readFloat();
+        long  long789    = dataInputStream.readLong();
+
+        dataInputStream.close();
+
+        System.out.println("int123     = " + int123);
+        System.out.println("float12345 = " + float12345);
+        System.out.println("long789    = " + long789);
+    }
+}
+
+-----------------------------------------------------------------
+
+ObjectInputStream / ObjectOutputStream
+--------------------------------------
+
+Read/write objects instead of raw bytes.
+
+	public class ObjectInputStreamExample {
+
+		public static class Person implements Serializable {
+			public String name = null;
+			public int    age  =   0;
+		}
+
+
+		public static void main(String[] args) throws IOException, ClassNotFoundException {
+
+			ObjectOutputStream objectOutputStream =
+				new ObjectOutputStream(new FileOutputStream("data/person.bin"));
+
+			Person person = new Person();
+			person.name = "Jakob Jenkov";
+			person.age  = 40;
+
+			objectOutputStream.writeObject(person);
+			objectOutputStream.close();
+
+
+			ObjectInputStream objectInputStream =
+				new ObjectInputStream(new FileInputStream("data/person.bin"));
+
+			Person personRead = (Person) objectInputStream.readObject();
+
+			objectInputStream.close();
+
+			System.out.println(personRead.name);
+			System.out.println(personRead.age);
+		}
+	}	
+
+-----------------------------------------------------------------
+
+SequenceInputStream
+-------------------
+
+Combines two or more other InputStream's into one. 
+First the SequenceInputStream will read all bytes from the first InputStream, 
+	then all bytes from the second InputStream.
+	
+	InputStream input1 = new FileInputStream("c:\\data\\file1.txt");
+	InputStream input2 = new FileInputStream("c:\\data\\file2.txt");
+
+	SequenceInputStream sequenceInputStream = new SequenceInputStream(input1, input2);
+
+	int data = sequenceInputStream.read();
+	while(data != -1){
+		System.out.println(data);
+		data = sequenceInputStream.read();
+	}
+	
+Combining More Than Two InputStreams
+------------------------------------
+
+SequenceInputStream sequenceInputStream = new SequenceInputStream(Enumeration enum)
+OR
+SequenceInputStream sequenceInputStream = new SequenceInputStream(SequenceInputStream s1, SequenceInputStream s2)
+
+-----------------------------------------------------------------
+
 Pipes
 -----
 Pipes in Java IO provides the ability for two threads running in the same JVM to communicate. 
@@ -129,8 +282,107 @@ The data written to the PipedOutputStream by one thread can be read from the con
 
 		final PipedOutputStream output = new PipedOutputStream();
         final PipedInputStream  input  = new PipedInputStream(output);
+		
+------------------------------------------------------------------------------------------------
 
+BufferedInputStream (raw bytes) or BufferedReader (characters)
+--------------------------------------------------------------		
+Read data one block at a time and push it to an internal buffer.
+When you read a byte from the BufferedInputStream you are therefore reading it from its internal buffer.
+When the buffer is fully read, the BufferedInputStream reads another larger block of data into the buffer.
+Much faster than reading a single byte at a time from an InputStream, especially for disk access and larger data amounts.
 
+Add buffering to an InputStream
+-------------------------------
+1. InputStream input = new BufferedInputStream(new FileInputStream("c:\\data\\input-file.txt"));
+
+2. Setting internal buffer -> 8KB
+	int bufferSize = 8 * 1024;
+	a. InputStream input = new BufferedInputStream(new FileInputStream("c:\\data\\input-file.txt"), 
+												bufferSize);
+	
+	b. BufferedReader bufferedReader = new BufferedReader(
+						  new FileReader("c:\\data\\input-file.txt"),
+						  bufferSize);
+
+The BufferedInputStream creates a byte array internally, and attempts to fill the array by calling the 
+InputStream.read(byte[]) methods on the underlying InputStream.
+
+So the internal buffer data is brought into the byte array.
+
+Optimal buffer size
+-------------------
+Depends on the Disk block size. 
+Better to use a buffer size that is a multiple of disk block size.
+Also look out for disk read cache is present then it's better to have buffer size equal to the cache size,
+	since the disk reads fill the entire cache, so we can fill buffer in one read.
+
+------------------------------------------------------------------------------------------------
+		
+java.io.RandomAccessFile
+------------------------
+While the FileInputStream and FileOutputStream allow you to read and write the file sequentially, you cannot
+read/write content in the middle.
+fis.read() starts reading from beginning and fos.write() allows you to append at the end.
+
+The RandomAccessFile class in the Java IO API allows you to move around a file and read from it or write to it as you please.
+
+Random access doesn't mean that you read or write from truly random places. It just means that you can skip around 
+the file and read from or write to it at the same time in any way you want. No particular access sequence is enforced. 
+This makes it possible to overwrite parts of an existing file, to append to it, delete from it, 
+and of course read from the file from wherever you need to read from it.
+
+Ex:
+		RandomAccessFile file = new RandomAccessFile("c:\\data\\file.txt", "rw");
+
+		file.seek(200); //position the file pointer at the location to read or write.
+
+		long pointer = file.getFilePointer();
+
+		file.close();
+
+Reading
+-------
+
+		RandomAccessFile file = new RandomAccessFile("c:\\data\\file.txt", "rw");
+
+		int aByte = file.read();
+
+		file.close();
+
+		
+The read/write method increments the file pointer to point to the next byte in the file after the byte just read/written ! 
+This means that you can continue to call read/write without having to manually move the file pointer.		
+		
+		
+------------------------------------------------------------------------------------------------
+PrintWriter / PrintStream
+-------------------------
+
+PrintWriter class (java.io.PrintWriter) enables you to write formatted data to an underlying Writer. 
+For instance, writing int, long and other primitive data formatted as text, rather than as their byte values.
+
+PrintWriter is useful if you are generating reports (or similar) where you have to mix text and numbers.
+The PrintWriter class has all the same methods as the PrintStream except for the methods to write raw bytes. 
+Being a Writer subclass the PrintWriter is intended to write text.
+
+Ex:
+	FileWriter  writer      = new FileWriter("d:\\data\\report.txt");
+	PrintWriter printWriter = new PrintWriter(writer);
+
+	printWriter.print(true);
+	printWriter.print((int) 123);
+	printWriter.print((float) 123.456);
+
+	printWriter.printf(Locale.UK, "Text + data: %1$", 123);
+
+	printWriter.close();
+
+	
+PrintStream formats the primitive values as text - like they would look when printed to the screen (or printed to paper).
+ex: System.out and System.err
+	
+------------------------------------------------------------------------------------------------
 
 System class
 ------------
@@ -237,74 +489,3 @@ size		- no. of elements to copy
 	Returns: On UNIX systems, it returns "\n";
 			 On Microsoft Windows systems it returns "\r\n".
 	Exception: NA
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
