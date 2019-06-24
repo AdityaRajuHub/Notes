@@ -227,19 +227,65 @@ A JSP object created using the ‘request’ scope can be accessed from any page
 	String name = (String)pageContext.getAttribute("student");
 	out.println("student name is " +name);
 	%>
+-------------------------------------------------------------------------------------------
 
+Redirect from one servlet to another servlet or JSP
+----------------------------------------------------
+
+Based on some condition we would need to redirect to servlet/jsp.
+A NEW request is made to servlet or jsp.
+In order to access data in redirected jsp we need to explicitly set data in session object in source servlet/jsp
+	and that data can be accessible in the other request.
+
+	if(someCondition) {
+		request.getSession().setAttribute("user", userDtls);
+		response.sendRedirect("success.jsp"); //or url to redirect to a servlet
+		return; //returns from this servlet after processing the redirected jsp and sends response
+	}
+	else {
+		response.sendRedirect("error.jsp");
+		return; //returns from this servlet and sends response
+	}
+	
+-> In order to avoid making a new request, and make server aware that it is a single request
+	we need to use RequestDispatcher.
+	
+	request.setAttribute("user", userDtls);
+	RequestDispatcher dispatcher= request.getRequestDispatcher("success.jsp");
+	dispatcher.forward(request, response);
+	
+The same request and response objects are available to the forwarded jsp.
+
+forward vs include
+------------------
+
+The main difference is that when you use forward the control is transferred to the next servlet/jsp you are calling, 
+while include retains the control with the current servlet, it just includes the processing done by the calling 
+servlet/jsp(like doing any out.println or other processing).
+
+-------------------------------------------------------------------------------------------------------------------
+
+JSTL  (JSP Standard Tag library)
+----
+helps to write java code as XML's.
+helps separate presentation logic from Java logic.
+
+jsp:useBean
+-----------
+
+	Used to get the bean if it already exists in the scope (set by some servlet preceeding this), otherwise create a new bean object in that scope.
+	If a new object is created then setProperty is called and the value is set to the property.
+	
+	<jsp:useBean id="user" class="com.dto.User" scope="request">
+		<jsp:setProperty property="userName" name="user" value="newUser" />
+	</jsp:useBean>
+
+jsp:getProperty
+---------------
+
+	Used to get the property of the bean object.
+	
+	<jsp:getProperty property="userName" name="user"
 
 	
-
-
-
-
-
-
-
-
-
-
-
-
- 
+-------------------------------------------------------------------------------
