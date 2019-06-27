@@ -197,7 +197,7 @@ JSP implicit objects are created during the translation phase of JSP to the serv
 These objects can be directly used in scriplets that goes in the service method.
 They are created by the container automatically, and they can be accessed using objects.
 
-out								-> to write the data to the buffer and send output to the client in responses
+out							-> to write the data to the buffer and send output to the client in responses
 request							-> one per access
 response						-> one per access
 config							-> servletConfig created by the container for each jsp page to get the 
