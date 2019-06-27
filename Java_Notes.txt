@@ -306,15 +306,78 @@ public void myAnnotationTestMethod(){
 	}
 }
 
+------------------------------------------------------------------------------------
+
+Abstract classes
+----------------
+
+Cannot create an instance of this class.
+Cannot call the constructor of this class but at run time it will be called.
+Any subclass extending this class must implement the abstract methods of this class.
+When an instance of the subclass is created then at runtime the constructor of the abstract class is called.
 
 ------------------------------------------------------------------------------------
 
+Reflection
+----------
 
+Java Reflection makes it possible to inspect classes, interfaces, fields and methods at runtime, 
+	without knowing the names of the classes, methods etc. at compile time. 
+It is also possible to instantiate new objects, invoke methods and get/set field values using reflection.
 
+Java Reflection is quite powerful and can be very useful
+Ex: 
+	1. Map properties in JSON files to getter / setter methods in Java objects, like Jackson, GSON, Boon etc
+	2. Map the column names of a JDBC ResultSet to getter / setter methods in a Java object.
+	
+Using Java Reflection you can inspect Java classes at runtime. 
+Inspecting classes is often the first thing you do when using Reflection
 
+1. Class Name
+2. Class Modifies (public, private, synchronized etc.)
+3. Package Info
+4. Superclass
+5. Implemented Interfaces
+6. Constructors
+7. Methods
+8. Fields
+9. Annotations
 
+The Class Object
+----------------
+Before you can do any inspection on a class you need to obtain its java.lang.Class object
+All types including the primitive types (int, long, float etc.) including arrays have an associated Class object.
 
+If you know the name of the class at compile time you can obtain a Class object like this:
 
+Class myObjectClass = MyObject.class
 
+If you don't know the name at compile time, but have the class name as a string at runtime, you can do like this:
 
+Class class = Class.forName("fully qualified class name"); 	//throws ClassNotFoundException  if not found
 
+Methods
+-------
+
+1. String getName()	-> get fully qualified name
+2. String getSimpleName()
+3. int getModifiers()	
+4. Package getPackage()
+5. Class getSuperclass()
+6. Class[] getInterfaces()	-> interfaces implemented by its super classes will not be returned
+7. Constructor[] getConstructors()
+8. Method[] getMethods()
+9. Field[] getFields()
+10. Annotation[] getAnnotations()
+
+11. Arrays
+		You can use Java Reflection to introspect Java arrays. 
+		Ex: you can determine what type of class the array is an array of.
+		
+12. Dynamic Proxies
+		Java reflection has a special Proxy class that can implement a Java Interface dynamically at runtime, 
+		rather than at compile time. 
+		The dynamic proxy is given a handler object which intercepts all method calls on the dynamic proxy. 
+		This can be a very handy way to solve some types of problems, 
+		like adding transaction management around methods calls, or logging, or other types of desired behaviour. 
+		
