@@ -1,0 +1,147 @@
+JVM
+---
+
+Responsible for converting java file to bytecode and then bytecode is sent as Native OS method calls.
+
+The life cycle journey of Java class file: 
+-----------------------------------------
+
+JVM Consists of 
+
+1. Class Loader - (Load app's .class files)
+
+2. Execution engine - execute byte code
+
+Class Loading subsystem consists of 3 phases
+
+1. Load
+	a. Application class loader (classpath, -cp)
+	b. Extension class loader (load files from jre/lib/ext)
+	c. Bootstrap class loader (load class files from app, core java classes)
+
+2. Link
+	a. Verify  (Verify bytecode is valid) - ensures that it adheres to the semantics of the language and does not disrupt the integrity of JVM
+	b. Prepare (Class variables to default values) - JVM allocates memory for the class variables and initializes them to 
+			default values according to the type of the variable. The actual initialization (with user-defined initialization values), 
+			however, does not occur until the next initialization phase.
+			Ex: int to 0 and string to null
+	c. Resolve (Symbolic linking) - since all the class files are already loaded in memory, symbolic reference is resolved by actual memory address.
+
+3. Initialize (Static block is executed and memory allocated) - variables are assigned with user-defined values
+		- Initialize class variables with the routine specified by the programmer.
+		- Initialize its super classes if it is not already initialized.
+
+ClassNotFoundException occurs during Loading phase
+NoClassDefFoundError   occurs during Linking phase
+
+Difference
+----------
+ClassNotFoundException is an exception that occurs when you try to load a class at run time using 
+Class.forName() or loadClass() methods and mentioned classes are not found in the classpath.
+
+NoClassDefFoundError is an error that occurs when a particular class is present at compile time, but was missing at run time.
+
+class A
+{
+  // some code
+}
+public class B
+{
+    public static void main(String[] args)
+    {
+        A a = new A();
+    }
+}
+
+A.class and B.class are compiled, but if A.class is not available in classpath, then it will result in exception.
+
+-------------------------------------------------------
+
+Execution engine
+-----------------
+1. Interpreter - looks at bytecode and interprets which OS native method to invoke
+2. JIT
+3. Hotspot profiler
+4. GC
+
+What is a JIT Compiler
+----------------------
+Let’s first explain what JIT compiler does.
+
+When we compile our Java program (e.g., using the javac command), we’ll end up with our source code compiled into the binary representation of our code – a JVM bytecode. This bytecode is simpler and more compact than our source code, but conventional processors in our computers cannot execute it.
+
+To be able to run a Java program, the JVM interprets the bytecode. Since interpreters are usually a lot slower than native code executing on a real processor, the JVM can run another compiler which will now compile our bytecode into the machine code that can be run by the processor. This so-called just-in-time compiler is much more sophisticated than the javac compiler, and it runs complex optimizations to generate high-quality machine code.
+
+3. More Detailed Look into the JIT Compiler
+The JDK implementation by Oracle is based on the open-source OpenJDK project. This includes the HotSpot virtual machine, available since Java version 1.3. It contains two conventional JIT-compilers: the client compiler, also called C1 and the server compiler, called opto or C2.
+
+C1 is designed to run faster and produce less optimized code, while C2, on the other hand, takes a little more time to run but produces a better-optimized code. The client compiler is a better fit for desktop applications since we don’t want to have long pauses for the JIT-compilation. The server compiler is better for long-running server applications that can spend more time on the compilation.
+
+3.1. Tiered Compilation
+Today, Java installation uses both JIT compilers during the normal program execution.
+
+As we mentioned in the previous section, our Java program, compiled by javac, starts its execution in an interpreted mode. The JVM tracks each frequently called method and compiles them. In order to do that, it uses C1 for the compilation. But, the HotSpot still keeps an eye on the future calls of those methods. If the number of calls increases, the JVM will recompile these methods once more, but this time using C2.
+
+This is the default strategy used by the HotSpot, called tiered compilation.
+
+3.2. The Server Compiler
+Let’s now focus for a bit on C2, since it is the most complex of the two. C2 has been extremely optimized and produces code that can compete with C++ or be even faster. The server compiler itself is written in a specific dialect of C++.
+
+However, it comes with some issues. Due to possible segmentation faults in C++, it can cause the VM to crash. Also, no major improvements have been implemented in the compiler over the last several years. The code in C2 has become difficult to maintain, so we couldn’t expect new major enhancements with the current design. With that in mind, the new JIT compiler is being created in the project named GraalVM.
+
+4. Project GraalVM
+Project GraalVM is a research project created by Oracle with the goal to replace the HotSpot entirely. We can look at Graal as several connected projects: a new JIT compiler for the HotSpot and a new polyglot virtual machine. It offers a comprehensive ecosystem supporting a large set of languages (Java and other JVM-based languages; JavaScript, Ruby, Python, R,  C/C++, and other LLVM-based languages).
+
+We’ll of course focus on Java.
+
+4.1. Graal – a JIT Compiler Written in Java
+Graal is a high-performance JIT compiler. It accepts the JVM bytecode and produces the machine code.
+
+There are several key advantages of writing a compiler in Java. First of all, safety, meaning no crashes but exceptions instead and no real memory leaks. Furthermore, we’ll have a good IDE support and we’ll be able to use debuggers or profilers or other convenient tools. Also, the compiler can be independent of the HotSpot and it would be able to produce a faster JIT-compiled version of itself.
+
+The Graal compiler was created with those advantages in mind. It uses the new JVM Compiler Interface – JVMCI to communicate with the VM. To enable the use of the new JIT compiler, we need to set the following options when running Java from the command line:
+
+1
+-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler
+What this means is that we can run a simple program in three different ways: with the regular tiered compilers, with the JVMCI version of Graal on Java 10 or with the GraalVM itself.
+----------------------------------------------------
+
+Java Memory Model
+-----------------
+
+ALl the memory allocations reside in JVM
+
+1. Heap space 			- Dynamic memory 	- Objects
+2. PermGen space(Method area)	- Static memory	 	- Loaded Classes, Static (variables, methods)	- OutofMemoryError based on MaxPermsize allocated
+   Java 8- Metaspace 		- Physical memory	- Memory allocated in RAM, managed by OS  	- OutofMemoryError doesn't happen
+3. Stack(1 stack/thread)	- Stack memory	 	- function calls, function variables		- StackOverflowError
+4. Native method stack		- Native Stack memory	- OS native method calls (.dll)			- StackOverflowError
+5. PC registers(1/stack)	- Cache memory	 	- holds the current instruction address in the stack
+
+Heap space is again divided into 
+1. Young generation space
+2. Old generation space
+
+Young generation is where new Objects arrive. Internally has 3 divisions based on how much time an object is live and being referenced inside the program, 
+1. EdenSpace
+2. FromSpace (Survivor1)
+3. ToSpace (Survivor2)
+4. Old Generation - most live objects
+
+Finally it moves to Old generation where it is most likely to be used in the future as well.
+
+Memory specifications:
+----------------------
+
+Heap: 	-Xmx -Xms
+PermGen:-XX:PermSize -XX:MaxPermSize
+Stack: 	-Xss
+
+
+Garbage collection strategy
+---------------------------
+1. Marking
+2. Deletion
+3. Deletion + Compacting
+
+-----------------------------------------------------------------------------------------------------------

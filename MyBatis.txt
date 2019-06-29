@@ -1,0 +1,108 @@
+
+What is MyBatis?
+
+MyBatis sits on top of JDBC calls and helps hide the lowel level details from developer
+It is SQL centric.
+
+1. MyBatis is a first class persistence framework with support for custom SQL, stored procedures and advanced mappings. 
+2. MyBatis eliminates almost all of the JDBC code and manual setting of parameters and retrieval of results. 
+3. MyBatis can use simple XML or Annotations for configuration and map primitives, 
+	Map interfaces and Java POJOs (Plain Old Java Objects) to database records.
+
+4. Not using JPA standards
+5. It is very light-weight
+6. Uses the concept of mappers
+
+
+Why to use:
+-----------
+
+JDBC: has a lot of repeated boiler plate code
+
+Spring JDBC Template: better than raw JDBC but still there is some repeated mappings
+
+Hibernate/JPA: Excellent for CRUD, lot of mapping reuse. Trickier to use with large complex report queries or when dynamic SQL is needed
+
+MyBatis: SQL oriented. you provide the SQL.provides mapping support for input parameters and output results.
+		 Excellent for complex report queries or when dynamic queries are needed.
+		 Can also integrate with Hibernate/JPA.
+
+Advantages:
+-----------
+Already familiar to SQL ? developer ramp up time is faster.
+Easy to debug, since nothing is hidden
+Complex reports can be easily generated provided u have the SQL
+Easy to port already existing SQL
+Dynamic queries support
+Has good integration with Spring and third party cache
+Can also integrate with Hibernate/JPA.
+
+Legacy DB: Easy to integrate with Legacy tables
+Performance: easy to add hints and other performance optimization commands specific to DB vendor
+Existing reports: easy to integrate
+
+
+
+-----------------------------------------------------------------
+
+Working
+-------
+
+MyBatis works on the principle of Mappers.
+There is a mapper for every model, it is just to provide mapping between the queries and the java methods
+Mapper is responsible for cnverting between SQL columns and Java fields.
+
+From a design patter view the approach used is sometimes identified as Mapper pattern or Table-Data-Gateway pattern. 
+Mapper sits between Java objects and database tables and helps map values back and forth.
+
+Use @Mapper on the Mapper interface for the particular model
+In the mapper interface we write the queries decorated with the app. annotation
+
+AutoMapping feature (need to enable explicitly)
+-------------------
+Instead of using alias in queries, autoMapping works by checking the class with fields matching the column as below
+
+Database column: 	user_name
+Java object field: 	userName
+
+ex: 
+
+@Mapper
+public interface UserMapper {
+	
+	@Select("select * from user")
+	List<User> findAll();
+	
+	@Select("select id, UNAME as userName, LNAME as lastName from user where id=#{id}") // userName and lastName are fields in POJO
+	List<User> findById(User user); 
+	
+	@Insert("insert into user(name,salary) values( #{name}, #{salary} )")	//name and salary shd be similar to how it is defined in model
+	@SelectKey(statement="select LAST_INSERT_ID()", keyProperty="id", before="false", resultType= Integer.class)
+	public void insert(User user);
+	
+	@Update("update user set salary= #{salary} and name= #{name} where id= #{id}")
+	public void update(User user);
+	
+	@Delete("delete user where id= #{id}")
+	public void delete(User user);
+}
+
+
+
+@MappedTypes(User.class) //comma separated list of models
+@MapperScan("com.mybatis.mapper")
+@SpringBootApplication
+public class SpringBootMyBatisApp {
+	public static void main(String[] args) {
+		SpringApplication.run(SpringBootMyBatisApp.class, args);
+	}
+}
+
+Dynamic Queries
+---------------
+
+Use XML config for dynamic queries
+
+
+
+

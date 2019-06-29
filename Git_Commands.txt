@@ -1,0 +1,183 @@
+Git is a distributed version control system.
+
+Generally any VCS operates in a intranet meaning in one network and anyone on that network having access to that server can use it.
+But what if the person working offline wants to check in changes. This is where Git comes into picture.
+Also if the code is on one central server repository then it means that there is a single point of failure.
+
+Git is distributed meaning we have a Remote/Central repository that everyone has access to and a local repository.
+Every developer has a copy of the repository in his local machine. The local repository resides as a .git folder inside project's root.
+
+Git is a version control management tool.
+GitHub is a code hosting platform for version control collaboration.
+
+Advantages:
+
+1. Every developer has a local copy of the entire development history and changes are copied from one repo to another.
+2. Compatible with SVN and SVk repo's which can be directly accessed using Git-SVN
+3. Non Linear development using Branching (Master branch contains Prod-quality code)
+4. Lightweight Uses compression techniques
+5. Speed - since git is written in C language
+6. Open Source
+7. Reliable - since easy to recover from one of the local repo's
+8. Secure - uses SHA1
+9. Economical - FREE. All heavy lifting is done on client side. Hence lot of money is saved on costly servers.
+
+Git flow
+--------
+
+Working Area		Staging Area		.git directory 		Central Repository
+									  (Local Repository)	
+--------------------------------------------------------------------------------------------------------------									  
+					git checkout				
+	<------------------------------------------|
+					git merge
+	<------------------------------------------|
+		Stage fixes										
+	|------------------>							
+								Commit
+						|---------------------->			
+														Pull
+												<--------------------|
+														Push
+												|-------------------->
+					
+1. When there are a group of related files add at once to staging					
+
+--------------------------------------------------------------------------------------------------------------
+
+Creating repository
+-------------------
+
+> git init 
+	If we run this command in any folder, it places .git file for tracking purposes
+	
+> git remote add origin <url>
+	If there exists a remote repo then add origin links our local repo created using init with remote repo on the url
+
+> git clone <url> <where to clone>
+	ex: git clone ../remote_repo.git .
+
+> git remote -v
+	List all the remote repos
+	
+> git branch -a
+	List all the branches on this machine
+
+
+Making changes
+--------------
+
+> git status
+	Provides untracked files
+
+> touch .gitignore 
+	creates a file which can contain all the files to be ignored. If we place *.project in this file and run > git status command
+	the .project files don't show up
+
+> git add .gitignore
+
+> git add -A	
+	Add all files to staging area/index
+
+> git reset
+	Resets back to working area
+	
+> git commit -m "commit message"
+
+> git commit -a -m "msg"
+	-a option automatically adds all the tracked files to staging/index area and commits them.
+	The untracked files need to be added explicitly
+
+	
+Synch repos
+-----------
+	
+> git diff
+	Lists the differences in working directory to that of repo
+	
+> git pull origin master			-->here origin refers to the remote repository
+	origin - remote repository
+	master - the branch we want to pull from
+
+> git push origin master
+
+Parallel development
+--------------------
+
+Creating a branch
+-----------------
+
+> git checkout <branch-name>
+	Switch to that branch, Start working on that branch, whatever commands we give operate on this branch
+
+> git branch <branch-name>
+	Creates new branch with specified name from the operating branch
+
+> git branch
+	List all the branches
+	
+> git branch --merged
+	List all the branches that have been merged with the current operating branch
+
+> git merge <branch-name>
+	Merge changes of the branch with the current operating branch
+	
+Deleting a branch
+-----------------
+
+> git branch -d <branch-name>
+	Deletes the branch
+
+> git branch -a
+	Removed from local,still listed in remote
+
+> git push origin --delete <branch-name>
+
+Reverting changes 
+-----------------	
+	
+> git log 
+	Gives detailed commit history for a particular file
+	
+> git checkout <first 8 alphanumerics of the hash key> <name of the file>
+	reverts to the old commit
+
+	
+Rebasing
+--------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+	
+	
+	

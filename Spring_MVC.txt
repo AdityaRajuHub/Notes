@@ -1,0 +1,97 @@
+The DispatcherServlet is one of the important components of Spring MVC web framework and acts as a Front Controller. Similar to other Java web framework, Spring MVC also uses a front controller to receive all incoming request and delegates to other components for further processing e.g. Spring MVC controllers which are annotated using @Controller annotation and ViewResolvers e.g InternalResourceViewResolver class.
+
+A Front Controller (see Patterns of Enterprise Application Architecture) is a common pattern in web application and used to receive request and delegate to other components in the application for actual processing. The DispatcherServlet is a front controller e.g. it provides a single entry point for a client request to Spring MVC web application and forwards request to Spring MVC controllers for processing.
+
+The DispatcherServlet is like any other Servlet class and it has to be declared inside the deployment descriptor or web.xml file as shown be
+
+<servlet>
+    <servlet-name>dispatcher</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+        <param-name>contextConfigLocation</param-name>
+        <!--Defaults to WEB-INF\dispatcher-servlet.xml -->
+        <param-value>classpath:mvc-config.xml</param-value>
+    </init-param>
+</servlet> 
+
+<servlet-mapping>
+    <servlet-name>dispatcher</servlet-name>
+    <url-pattern>/*</url-pattern>
+</servlet-mapping>
+
+CMI: 
+
+<servlet>
+		<servlet-name>RemoteController</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>RemoteController</servlet-name>
+		<url-pattern>/remote/*</url-pattern>
+	</servlet-mapping>
+	
+	
+I haven't shown here but, DispatcherServlet is also usually preloaded using the load-on-startup tag of the deployment descriptor. 
+You can give zero or positive value on this tag to pre-load a servlet, otherwise, the servlet will only be loaded when a request will arise.
+
+If your servlet does a lot of job on initialization e.g. DispatcherServlet which initializes all the beans declared in its web context 
+e.g. controllers, view resolvers, and mapping handlers then it could slow down the response time.
+
+
+
+Btw, it's not the only way to declare DispatcherServlet in Spring MVC. From Spring 3.2 and Servlet 3.0 specification, 
+you can programmatically declare DispatcherServlet using ServletContainerInitializer interface. 
+This is a Servlet 3,0 feature which allows Servlet 3.0 compliant containers  
+e.g. Tomcat 7 or higher to scan and load any class which implements this interface.
+
+Spring provides an implementation of this interface as SpringServletContainerInitializer and a convenient class called 
+AbstractAnnotationConfigDispatcherServletInitialzer in Spring 3.2 to configure DispatcherServlet without deployment descriptor.
+
+This class implements SpringServletContainerInitializer hence automatically picked by Servlet 3.0 compliant containers. See Spring in 
+Action 4th Edition to know more about configuring DispatcherServlet using Java Configuration. 
+
+
+View Resolver
+
+CMI:
+
+<bean id="viewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView" />
+		<property name="prefix" value="/jsp/" />
+		<property name="suffix" value=".jsp" />
+	</bean> 	
+	
+With Spring boot, for the jsp to be rendered in the browser we need to add jasper dependancy in the classpath,
+otherwise the jsp would just be downloaded.
+
+
+Inside a controller the data can be sent back to the jsp by setting the attributes in request, session objects,
+but it is preferrable to use ModelAndView object to set the data as attributes.
+
+The HttpServletRequest and HttpServletResponse, HttpSession objects are dependancy injected into the controller methods
+by Spring MVC
+
+@Controller
+public class DemoController {
+	
+	@RequestMapping("/home")
+	public String getHomePage(HttpServletRequest req, HttpServletResponse res) {
+		String name= req.getParameter("name");
+		//do something
+		PrintWriter writer= res.getWriter();
+		writer.write("something");
+		writer.flush();
+		writer.close();
+	}
+}
+@Controller
+public class DemoController {
+	
+	@RequestMapping("/home")
+	public String getHomePage(HttpSession session) {
+		session.setAttribute("name", "someName");
+		
+		return "home.jsp";
+	}
+}

@@ -1,0 +1,291 @@
+Servlets
+--------
+are java classes that are executed in Server container.
+
+All servlets need to extend HttpServlet which extends GenericServlet.
+There can be many implementations to GenericServlet.
+The HttpServlet is one such implementation specifically implements HTTP protocol.
+The default implementation for HttpServlet methods are provided by Tomcat.
+So in case we dont override some method then default method will be called 
+	which throws Unsupported Exception if that particular method is not found in our servlet.
+
+Generic Servlet implements Servlet, ServletConfig
+	|- init(ServletConfig config) { //default implementation provided
+			this.config= config;	// sets the config variable passed to it
+			init();					// calls the init method
+	   }
+	|- init()			 -> to be overridden in our servlet class for initialization code
+	|- service(req, res) -> overridden at HttpServlet
+
+ServletConfig object corresponds to the object containing the servlets init-params
+We can access the Servlets init-params set in web.xml or @WebParams annotation
+init-param is like a variable of the servlet singleton object's servletCOnfig object variable
+
+doGet() {
+	String dfltUser= this.getServletConfig().getInitParameter("defaultUser");	//here this object is already a subclass of GenericServlet 
+																				//so it has access to servletConfig
+}
+
+Methods in HttpServlet throws ServletException, IOException
+-----------------------------------------------------------
+1. void doGet(HttpServletRequest req, HttpServletResponse res);
+2. void doPut(HttpServletRequest req, HttpServletResponse res);
+3. void doPost(HttpServletRequest req, HttpServletResponse res)
+4. void doDelete(HttpServletRequest req, HttpServletResponse res)
+5. void doHead(HttpServletRequest req, HttpServletResponse res)
+6. void doOptions(HttpServletRequest req, HttpServletResponse res)
+7. void doTrace(HttpServletRequest req, HttpServletResponse res)
+8. service(req, res) -> implemented in HttpServlet, calls the appropriate method doXXX() like doGet, doPost by checking the http header 
+					 -> throws Unsupported operation exception if no suitable method doXXX() found
+
+class DemoServlet extends HttpServlet {
+
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse res) {
+		PrintWriter out= res.getWriter();
+		out.println("Hello from GET method...");
+		out.close();
+	}
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse res) {
+
+	}
+	
+	//... rest of the doXXX() methods
+}
+
+
+Difference between GET and POST is in the way the request parameters are passed to the Servlet`
+
+GET  - sent in the URL as query params
+POST - sent in the request body
+
+
+Request and Response object instances are created per URL access
+Servlet object is singleton maintained by Servlet container in Tomcat
+Different requests have different servlet threads, not instances.
+
+HTTP - Stateless protocol
+		All requests are independant, HTTP doesn't remember state.
+		In order to maintain state we can make use of session.
+		The session object can be accessed from request.getSession()
+		To remember state we can set attributes to session.
+		The session object maintains state across requests.
+		
+Ex: Login credentials, Shopping cart etc
+
+Session object is created once per user/browser/machine.
+Available across requests.
+
+Context
+-------
+
+Across the entire app
+Shared across Servlets
+Initialization data can be put in context
+can be accessed with request.getContext()
+
+
+									
+									
+									Servlet1 Object		Servlet2 Object
+			User1	------------>		|	| ...			|	|	|
+										|	| ...			|	| 	|
+										|	| ...			|	|	|
+			User2	------------>		T1 T2 				T1	T2	T3
+			...		------------>
+			
+		T* -> Thread
+	
+init() and service()
+--------------------
+
+			First call to servlet
+					|
+					|
+		init(ServletConfig config) method called in GenericServlet
+					|
+				init() method of HttpServlet called
+					|
+				service()
+					|
+		 ___________|___________
+		|  						|
+	doGet()					doPost()		
+			
+					
+		Subsequent calls to Servlet
+					|
+				service()
+					|
+		 ___________|___________
+		|  						|
+	doGet()					doPost()		
+			
+---------------------------------------------------------------------------------
+
+JSP's
+------
+
+The init() method in a jsp is jspInit() -> need to override this method
+
+1. Declaration tag 	-> 		<%! %>		-> declare/define method, variables			
+2. Expression tag  	-> 		<%=	%>		-> expression evaluation returns a value
+3. Script tag		->		<%	%>		-> 	
+			
+		<%! public void add(int a, int b) {
+				return a+b;
+			}
+			int b= 100;
+		%>
+		
+		<% for(int i=0;i<5;i++) {
+		%>
+			<br> The sum of i with b is <%=i+b %>
+		<%} %>	
+
+JSP is converted to servlet
+---------------------------		
+			
+All the code goes into service() method since it doesn't know if it's a get or a post
+So that's why we cannot have the method declaration inside script tag since 
+	we cannot have method inside another method.
+All the html is put in write method of PrintWriter object.
+Expression tag is output using print() method of PrintWriter
+
+Page Directive	-> top of the page -> applies to the whole servlet class
+--------------
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"	-> same as response.setContentType("text/html")
+	pageEncoding="UTF-8" import="package to import"%>
+<%@ page import="some other package"%>
+
+Include directive
+-----------------
+
+<% include file="/hello.jsp" %>
+
+Embeds this included jsp into the main jsp.
+It means that it is compiled only once.
+It cannot be used when the content of the included jsp need to change based on some condition at runtime.
+
+JSP include directive vs include action tag
+-------------------------------------------
+
+1) Include directive includes the file at translation time 
+	(the phase of JSP life cycle where the JSP gets converted into the equivalent servlet) 
+	whereas the include action includes the file at runtime.
+
+2) If the included file is changed but not the JSP which is including it then the changes will reflect only when 
+	we use include action tag. The changes will not reflect if you are using include directive as the JSP is not changed 
+	so it will not be translated (during this phase only the  file gets included when using directive) 
+	for request processing and hence the changes will not reflect.
+
+3) Syntax difference: Include directive: <%@ include file="file_name" %> whereas include action has like this <jsp:include page="file_name" />
+
+4) When using include action tag we can also pass the parameters to the included page by using param action tag but in case of include directive it’s not possible.
+
+	<jsp:include page="file_name" />
+		<jsp:param name="parameter_name" value="parameter_value" />
+	</jsp:include>
+
+Predefined implicit objects
+---------------------------
+
+JSP implicit objects are created during the translation phase of JSP to the servlet.
+These objects can be directly used in scriplets that goes in the service method.
+They are created by the container automatically, and they can be accessed using objects.
+
+out							-> to write the data to the buffer and send output to the client in responses
+request							-> one per access
+response						-> one per access
+config							-> servletConfig created by the container for each jsp page to get the 
+									configuration for this servlet in web.xml ex: init-param
+application	(context object)	-> one per application
+session							-> one per session
+pageContext						-> It is used to get, set and remove the attributes from a particular scope
+page							-> this object for current jsp page
+exception						->
+
+Scopes are of 4 types:
+---------------------
+Page
+Request
+Session
+Application
+
+page
+----
+‘page’ scope means, the JSP object can be accessed only from within the same page where it was created. The default scope for JSP objects created using tag is page. JSP implicit objects out, exception, response, pageContext, config and page have ‘page’ scope.
+
+request
+-------
+A JSP object created using the ‘request’ scope can be accessed from any pages that serves that request. More than one page can serve a single request. The JSP object will be bound to the request object. Implicit object request has the ‘request’ scope.
+
+	<% pageContext.setAttribute("student","gurustudent",pageContext.PAGE_SCOPE);
+	String name = (String)pageContext.getAttribute("student");
+	out.println("student name is " +name);
+	%>
+-------------------------------------------------------------------------------------------
+
+Redirect from one servlet to another servlet or JSP
+----------------------------------------------------
+
+Based on some condition we would need to redirect to servlet/jsp.
+A NEW request is made to servlet or jsp.
+In order to access data in redirected jsp we need to explicitly set data in session object in source servlet/jsp
+	and that data can be accessible in the other request.
+
+	if(someCondition) {
+		request.getSession().setAttribute("user", userDtls);
+		response.sendRedirect("success.jsp"); //or url to redirect to a servlet
+		return; //returns from this servlet after processing the redirected jsp and sends response
+	}
+	else {
+		response.sendRedirect("error.jsp");
+		return; //returns from this servlet and sends response
+	}
+	
+-> In order to avoid making a new request, and make server aware that it is a single request
+	we need to use RequestDispatcher.
+	
+	request.setAttribute("user", userDtls);
+	RequestDispatcher dispatcher= request.getRequestDispatcher("success.jsp");
+	dispatcher.forward(request, response);
+	
+The same request and response objects are available to the forwarded jsp.
+
+forward vs include
+------------------
+
+The main difference is that when you use forward the control is transferred to the next servlet/jsp you are calling, 
+while include retains the control with the current servlet, it just includes the processing done by the calling 
+servlet/jsp(like doing any out.println or other processing).
+
+-------------------------------------------------------------------------------------------------------------------
+
+JSTL  (JSP Standard Tag library)
+----
+helps to write java code as XML's.
+helps separate presentation logic from Java logic.
+
+jsp:useBean
+-----------
+
+	Used to get the bean if it already exists in the scope (set by some servlet preceeding this), otherwise create a new bean object in that scope.
+	If a new object is created then setProperty is called and the value is set to the property.
+	
+	<jsp:useBean id="user" class="com.dto.User" scope="request">
+		<jsp:setProperty property="userName" name="user" value="newUser" />
+	</jsp:useBean>
+
+jsp:getProperty
+---------------
+
+	Used to get the property of the bean object.
+	
+	<jsp:getProperty property="userName" name="user"
+
+	
+-------------------------------------------------------------------------------

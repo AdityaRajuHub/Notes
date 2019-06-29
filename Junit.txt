@@ -1,0 +1,428 @@
+JUnit 5
+-----
+Wat is unit test cases ?
+
+Providing a way to verify the code continues to work even in the future. To put a safety net around code so that any changes made in the future
+are satisfying the conditions/expectations that we set on the functionality.
+
+Expectation vs Reality
+
+----------------------------------------------------------------
+
+public Class Calculator {
+
+	public int add(int a, int b) {
+		return a+b;
+	}
+}
+
+public class CalculatorTest {
+	
+	public void test() {
+		Calculator c= new Calculator();
+		int expected = 3;
+		int actual = c.add(1,2);
+		if(actual != expected) {
+			throw new CalculatorTestFailed();
+		}
+	}
+}
+
+Test runs
+
+1. Prepare	(we do)
+2. Provide test inputs (we do)
+3. Run the tests
+4. Provide expected outputs (we do)
+5. Verify result
+6. Do something to alert developer if test failed
+
+JUnit 5 Architecture (requires Java 8 (or higher) at runtime.)
+--------------------
+JUnit 5 = JUnit Platform + JUnit Jupiter + JUnit Vintage
+
+The JUnit Platform serves as a foundation for launching testing frameworks on the JVM. 
+
+It also defines the TestEngine API for developing a testing framework that runs on the platform. 
+The Jupiter sub-project provides a TestEngine for running Jupiter based tests on the platform.
+
+JUnit Vintage provides a TestEngine for running JUnit 3 and JUnit 4 based tests on the platform.
+
+Platform is the execution engine which runs the test cases.
+Jupiter is the API that we use to prepare the test cases.
+Vintage is also an API, we can use to provide backward compatibility.
+Extensions provide support for 3rd party test integration.
+
+------------------------------------------------------------------
+
+Place ur test classes in src/main/test and then packages
+
+@Test 		 				Denotes that a method is a test method. 
+							***Instantiates the Test class for every test method in the class. 
+							New instance is created per Test. This is the default behavior.
+							
+@TestInstance				Used to configure the test instance lifecycle for the annotated test class.
+							@TestInstance(TestInstance.Lifecycle.PER_CLASS | PER_METHOD)
+							public class TestClass
+							If your test methods rely on state stored in instance variables, 
+							you may need to reset that state in @BeforeEach or @AfterEach methods.
+							"per-method" mode, use static method to use static methods for @BeforeAll and @AfterAll or else it throws Exception.
+							"per-class" mode makes it possible to declare @BeforeAll and @AfterAll on 
+							non-static methods as well as on interface default methods.
+							-Djunit.jupiter.testinstance.lifecycle.default=per_class (use via. system property (or) junit-platform.properties file remove -D)
+
+@TestMethodOrder			To control the order in which test methods are executed and specify the desired MethodOrderer implementation
+							MethodOrderer implementations: 
+							
+								1. Alphanumeric: sorts test methods alphanumerically based on their names and formal parameter lists.
+
+								2. OrderAnnotation: sorts test methods numerically based on values specified via the @Order annotation.
+
+								3. Random: orders test methods pseudo-randomly and supports configuration of a custom seed.
+								
+								Ex:	
+									@TestMethodOrder(OrderAnnotation.class)
+									class OrderedTestsDemo {
+
+										@Test
+										@Order(1)
+										void nullValues() {
+											// perform assertions against null values
+										}
+
+										@Test
+										@Order(2)
+										void emptyValues() {
+											// perform assertions against empty values
+										}
+
+										@Test
+										@Order(3)
+										void validValues() {
+											// perform assertions against valid values
+										}
+
+									}
+							
+							
+@Nested						Denotes that the annotated class is a non-static nested test class. 
+							@BeforeAll and @AfterAll methods cannot be used directly in a @Nested test class 
+							unless the "per-class" test instance lifecycle is used. 
+							Only non-static nested classes (i.e. inner classes) can serve as @Nested test classes. 
+							Nesting can be arbitrarily deep, and those inner classes are considered to be full members of the 
+							test class family with one exception: @BeforeAll and @AfterAll methods do not work by default. 
+							The reason is that Java does not allow static members in inner classes. However this restriction 
+							can be circumvented by annotating a @Nested test class with @TestInstance(Lifecycle.PER_CLASS).
+							
+							@DisplayName("A stack")
+							class TestingAStackDemo {
+								//some methods here 
+								@Nested
+								@DisplayName("when new")
+								class WhenNew {
+									//some methods here
+										@Nested
+										@DisplayName("after pushing an element")
+										class AfterPushing {
+											//some methods here
+										}
+									}
+							}
+
+@DisplayName				Declares a custom display name for the test class or test method.
+
+@DisplayNameGeneration		Declares a custom display name generator for the test class.
+							class DisplayNameGeneratorDemo {
+
+								@Nested
+								@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
+								class A_year_is_not_supported {
+
+									@Test
+									void if_it_is_zero() {
+									}
+
+									@DisplayName("A negative value for year is not supported by the leap year computation.")
+									@ParameterizedTest(name = "For example, year {0} is not supported.")
+									@ValueSource(ints = { -1, -4 })
+									void if_it_is_negative(int year) {
+									}
+
+								}
+
+								@Nested
+								@DisplayNameGeneration(IndicativeSentences.class)
+								class A_year_is_a_leap_year {
+
+									@Test
+									void if_it_is_divisible_by_4_but_not_by_100() {
+									}
+
+									@ParameterizedTest(name = "Year {0} is a leap year.")
+									@ValueSource(ints = { 2016, 2020, 2048 })
+									void if_it_is_one_of_the_following_years(int year) {
+									}
+
+								}
+
+								static class IndicativeSentences extends DisplayNameGenerator.ReplaceUnderscores {
+
+									@Override
+									public String generateDisplayNameForClass(Class<?> testClass) {
+										return super.generateDisplayNameForClass(testClass);
+									}
+
+									@Override
+									public String generateDisplayNameForNestedClass(Class<?> nestedClass) {
+										return super.generateDisplayNameForNestedClass(nestedClass) + "...";
+									}
+
+									@Override
+									public String generateDisplayNameForMethod(Class<?> testClass, Method testMethod) {
+										String name = testClass.getSimpleName() + ' ' + testMethod.getName();
+										return name.replace('_', ' ') + '.';
+									}
+
+								}
+
+							}
+							+-- DisplayNameGeneratorDemo [OK]
+							  +-- A year is not supported [OK]
+							  | +-- A negative value for year is not supported by the leap year computation. [OK]
+							  | | +-- For example, year -1 is not supported. [OK]
+							  | | '-- For example, year -4 is not supported. [OK]
+							  | '-- if it is zero() [OK]
+							  '-- A year is a leap year... [OK]
+								+-- A year is a leap year if it is divisible by 4 but not by 100. [OK]
+								'-- A year is a leap year if it is one of the following years. [OK]
+								  +-- Year 2016 is a leap year. [OK]
+								  +-- Year 2020 is a leap year. [OK]
+								  '-- Year 2048 is a leap year. [OK]							
+							
+@ParameterizedTest			Denotes that this method will be run multiple times for each parameter supplied with below @ValueSource
+							Each invocation will be reported separately	
+							Ex: 
+								@ParameterizedTest(name = "Year {0} is a leap year.")
+								@ValueSource(ints = { 2016, 2020, 2048 }) 		
+								void if_it_is_one_of_the_following_years(int year) {
+								}
+								(OR)
+								@ValueSource(strings = { "racecar", "radar", "able was I ere I saw elba" })
+								
+@RepeatedTest				repeat a test a specified number of times ex: @RepeatedTest(10)
+
+@TestFactory				Denotes that a method is a test factory for dynamic tests.
+							@Test methods are static in nature meaning that they are fully specified at compile time, 
+							and their behavior cannot be changed by anything happening at runtime. 
+							New kind of test is a dynamic test which is generated at runtime by this factory method.
+							
+@Tag						Test classes and methods can be tagged via the @Tag annotation.
+							@Tag("dev")	
+							@Tag("qa")
+							class TaggingDemo {
+								@Test
+								@Tag("qa")
+								void testingTaxCalculation() {
+								}
+							}
+							You can filter tests by tags or tag expressions using the following configuration properties.
+							1. to include tags or tag expressions, use groups.
+							2. to exclude tags or tag expressions, use excludedGroups.
+							
+							<build>
+								<plugins>
+									<plugin>
+										<artifactId>maven-surefire-plugin</artifactId>
+										<version>2.22.0</version>
+										<configuration>
+											<groups>acceptance | !feature-a</groups>
+											<excludedGroups>integration, regression</excludedGroups>
+										</configuration>
+									</plugin>
+								</plugins>
+							</build>
+							
+							
+							Tag expressions are boolean expressions with the operators ! - NOT, & - AND and | - OR. 
+							In addition, ( and ) can be used to adjust for operator precedence.
+							Let's say there are 3 modes of testing product, catalog and shipping
+							
+								Tag Expression					Selection
+							-------------------------------------------------------------
+							product						all tests tagged for product
+
+							catalog | shipping 			all tests tagged for catalog plus all tests for shipping
+
+							catalog & shipping			all tests tagged for the intersection between catalog and shipping
+
+							product & !end-to-end   						all tests for product, but not the end-to-end tests
+
+							(micro | integration) & (product | shipping) 	all micro or integration tests for product or shipping
+							
+@Disabled					Used to disable a test class or test method; 
+							
+Lifecycle annotations
+---------------------							
+
+@BeforeAll					should be executed before all @Test, @RepeatedTest, @ParameterizedTest, 
+							and @TestFactory methods in the current class;
+
+@AfterAll					same as above but after all 	
+
+@BeforeEach					Denotes that the annotated method should be executed before each @Test, @RepeatedTest, 
+							@ParameterizedTest, or @TestFactory method in the current class
+
+@AfterEach					Denotes that the annotated method should be executed after each @Test, @RepeatedTest, 
+							@ParameterizedTest, or @TestFactory method in the current class;
+
+---------------------------------------------------------------------
+
+1. assertEquals(expected, actual)
+2. assertArrayEquals(expectedArr, actualArr)
+3. assertIterableEquals(expectedArr, actualArr)
+4. assertTrue	
+
+class MyFirstJUnitJupiterTests {
+
+    private final Calculator calculator = new Calculator();
+
+    @Test
+    void addition() {
+        assertEquals(2, calculator.add(1, 1));
+    }
+
+}
+
+class AssertionsDemo {
+
+    private final Calculator calculator = new Calculator();
+
+    private final Person person = new Person("Jane", "Doe");
+
+    @Test
+    void standardAssertions() {
+        assertEquals(2, calculator.add(1, 1));
+        assertEquals(4, calculator.multiply(2, 2),
+                "The optional failure message is now the last parameter");
+        assertTrue('a' < 'b', () -> "Assertion messages can be lazily evaluated -- "
+                + "to avoid constructing complex messages unnecessarily.");
+    }
+
+    @Test
+    void groupedAssertions() {
+        // In a grouped assertion all assertions are executed, and all
+        // failures will be reported together.
+        assertAll("person",
+            () -> assertEquals("Jane", person.getFirstName()),
+            () -> assertEquals("Doe", person.getLastName())
+        );
+    }
+
+    @Test
+    void dependentAssertions() {
+        // Within a code block, if an assertion fails the
+        // subsequent code in the same block will be skipped.
+        assertAll("properties",
+            () -> {
+                String firstName = person.getFirstName();
+                assertNotNull(firstName);
+
+                // Executed only if the previous assertion is valid.
+                assertAll("first name",
+                    () -> assertTrue(firstName.startsWith("J")),
+                    () -> assertTrue(firstName.endsWith("e"))
+                );
+            },
+            () -> {
+                // Grouped assertion, so processed independently
+                // of results of first name assertions.
+                String lastName = person.getLastName();
+                assertNotNull(lastName);
+
+                // Executed only if the previous assertion is valid.
+                assertAll("last name",
+                    () -> assertTrue(lastName.startsWith("D")),
+                    () -> assertTrue(lastName.endsWith("e"))
+                );
+            }
+        );
+    }
+
+    @Test
+    void exceptionTesting() {
+        Exception exception = assertThrows(ArithmeticException.class, () ->
+            calculator.divide(1, 0));
+        assertEquals("/ by zero", exception.getMessage());
+    }
+
+    @Test
+    void timeoutNotExceeded() {
+        // The following assertion succeeds.
+        assertTimeout(ofMinutes(2), () -> {
+            // Perform task that takes less than 2 minutes.
+        });
+    }
+
+    @Test
+    void timeoutNotExceededWithResult() {
+        // The following assertion succeeds, and returns the supplied object.
+        String actualResult = assertTimeout(ofMinutes(2), () -> {
+            return "a result";
+        });
+        assertEquals("a result", actualResult);
+    }
+
+    @Test
+    void timeoutNotExceededWithMethod() {
+        // The following assertion invokes a method reference and returns an object.
+        String actualGreeting = assertTimeout(ofMinutes(2), AssertionsDemo::greeting);
+        assertEquals("Hello, World!", actualGreeting);
+    }
+
+    @Test
+    void timeoutExceeded() {
+        // The following assertion fails with an error message similar to:
+        // execution exceeded timeout of 10 ms by 91 ms
+        assertTimeout(ofMillis(10), () -> {
+            // Simulate task that takes more than 10 ms.
+            Thread.sleep(100);
+        });
+    }
+
+    @Test
+    void timeoutExceededWithPreemptiveTermination() {
+        // The following assertion fails with an error message similar to:
+        // execution timed out after 10 ms
+        assertTimeoutPreemptively(ofMillis(10), () -> {
+            // Simulate task that takes more than 10 ms.
+            Thread.sleep(100);
+        });
+    }
+
+    private static String greeting() {
+        return "Hello, World!";
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

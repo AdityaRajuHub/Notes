@@ -1,0 +1,391 @@
+Java has always been an Object Oriented Programming language. 
+What is means that everything in java programming revolves around Objects (except some primitive types for simplicity). 
+We don’t have only functions in java, they are part of Class and we need to use the class/object to invoke any function.
+
+C++, JavaScript; they are called functional programming language because we can write functions and use them when required.
+
+
+Runnable r = new Runnable(){
+			@Override
+			public void run() {
+				System.out.println("My Runnable");
+			}};
+
+The useful part of the above code is inside run() method. Rest all of the code is because of the way java programs are structured.
+
+Java 8 Functional Interfaces and Lambda Expressions help us in writing smaller and cleaner code by removing a lot of boiler-plate code.
+
+java.lang.Runnable is a great example of functional interface with single abstract method run()
+
+An interface with exactly one abstract method is called Functional Interface. 
+
+@FunctionalInterface ->  annotation is added so that we can mark an interface as functional interface.
+(Not mandatory, but best practice, gives compiler error if more than one method)
+
+Java 8 has defined a lot of functional interfaces in java.util.function package
+
+Some of the useful java 8 functional interfaces are 
+
+1. Consumer
+2. Supplier 
+3. Function 
+4. Predicate
+
+Examples
+--------
+
+interface Foo { boolean equals(Object obj); }
+// Not functional because equals is already an implicit member (Object class)
+
+interface Comparator<T> {
+ boolean equals(Object obj);
+ int compare(T o1, T o2);
+}
+// Functional because Comparator has only one abstract non-Object method
+
+interface Foo {
+  int m();
+  Object clone();
+}
+// Not functional because method Object.clone is not public
+
+interface X { int m(Iterable<String> arg); }
+interface Y { int m(Iterable<String> arg); }
+interface Z extends X, Y {}
+// Functional: two methods, but they have the same signature
+
+interface X { Iterable m(Iterable<String> arg); }
+interface Y { Iterable<String> m(Iterable arg); }
+interface Z extends X, Y {}
+// Functional: Y.m is a subsignature & return-type-substitutable
+
+interface X { int m(Iterable<String> arg); }
+interface Y { int m(Iterable<Integer> arg); }
+interface Z extends X, Y {}
+// Not functional: No method has a subsignature of all abstract methods
+
+interface X { int m(Iterable<String> arg, Class c); }
+interface Y { int m(Iterable arg, Class<?> c); }
+interface Z extends X, Y {}
+// Not functional: No method has a subsignature of all abstract methods
+
+interface X { long m(); }
+interface Y { int m(); }
+interface Z extends X, Y {}
+// Compiler error: no method is return type substitutable
+
+interface Foo<T> { void m(T arg); }
+interface Bar<T> { void m(T arg); }
+interface FooBar<X, Y> extends Foo<X>, Bar<Y> {}
+// Compiler error: different signatures, same erasure
+
+
+Advantages
+----------
+
+1. Reduced Lines of Code - Easily we can create instance of a functional interface using lambda expression rather than using anonymous class.
+
+2. Sequential and Parallel Execution Support - Stream API 
+
+3. Passing Behaviors into methods
+Ex:
+	public static int sumWithCondition(List<Integer> numbers, Predicate<Integer> predicate) {
+	    return numbers.parallelStream()
+	    		.filter(predicate)
+	    		.mapToInt(i -> i)
+	    		.sum();
+	}
+	
+//sum of all numbers
+	sumWithCondition(numbers, n -> true);
+	
+//sum of all even numbers
+	sumWithCondition(numbers, i -> i%2==0);
+	
+//sum of all numbers greater than 5
+	sumWithCondition(numbers, i -> i>5);
+
+
+4. Lazy Invocation - Refer Stream API Notes
+
+
+Lambda Expression Examples
+--------------------------
+
+() -> {}                     // No parameters; void result
+
+() -> 42                     // No parameters, expression body
+() -> null                   // No parameters, expression body
+() -> { return 42; }         // No parameters, block body with return
+() -> { System.gc(); }       // No parameters, void block body
+
+// Complex block body with multiple returns
+() -> {
+  if (true) return 10;
+  else {
+    int result = 15;
+    for (int i = 1; i < 10; i++)
+      result *= i;
+    return result;
+  }
+}                          
+
+(int x) -> x+1             // Single declared-type argument
+(int x) -> { return x+1; } // same as above
+(x) -> x+1                 // Single inferred-type argument, same as below
+x -> x+1                   // Parenthesis optional for single inferred-type case
+
+(String s) -> s.length()   // Single declared-type argument
+(Thread t) -> { t.start(); } // Single declared-type argument
+s -> s.length()              // Single inferred-type argument
+t -> { t.start(); }          // Single inferred-type argument
+
+(int x, int y) -> x+y      // Multiple declared-type parameters
+(x,y) -> x+y               // Multiple inferred-type parameters
+(x, final y) -> x+y        // Illegal: can't modify inferred-type parameters
+(x, int y) -> x+y          // Illegal: can't mix inferred and declared types
+
+
+Method and Constructor References
+---------------------------------
+A method reference is used to refer to a method without invoking it; 
+a constructor reference is similarly used to refer to a constructor without creating a new instance of the named class or array type.
+
+System::getProperty
+System.out::println
+"abc"::length
+ArrayList::new
+int[]::new
+
+Ex:
+---
+public class NumberTest {
+	public static int findSquareOfMaxOdd(List<Integer> numbers) {
+		return numbers.stream()
+				.filter(NumberTest::isOdd) 		//Predicate is functional interface and
+				.filter(NumberTest::isGreaterThan3)	// we are using lambdas to initialize it
+				.filter(NumberTest::isLessThan11)	// rather than anonymous inner classes
+				.max(Comparator.naturalOrder())
+				.map(i -> i * i)
+				.get();
+	}
+
+	public static boolean isOdd(int i) {
+		return i % 2 != 0;
+	}
+	
+	public static boolean isGreaterThan3(int i){
+		return i > 3;
+	}
+	
+	public static boolean isLessThan11(int i){
+		return i < 11;
+	}
+}
+	
+-------------------------------------------------------------------------------------------------
+
+Built-in Functional Interfaces in Java (java.util.function)
+--------------------------------------
+
+Java contains a set of functional interfaces designed for commonly occuring use cases, 
+so you don't have to create your own functional interfaces for every little use case.
+
+1. Function: Takes one input and definitely returns one output
+
+	public interface Function<T,R> {
+
+		public <R> apply(T parameter);
+	}
+	
+	Ex: 
+		Function<Long, Long> adderLambda = (value) -> value + 3;
+		Long resultLambda = adderLambda.apply((long) 8);
+		System.out.println("resultLambda = " + resultLambda);
+
+2. Predicate: Takes a single arg as param and returns true/false
+
+	public interface Predicate {
+	
+		public boolean test(T t);
+		
+	}
+	
+	Ex:
+		Predicate predicate = (value) -> value != null;
+		
+3. UnaryOperator: Takes a single parameter and returns parameter of the same type 
+	
+	The UnaryOperator interface can be used to represent an operation that takes a specific object as parameter, modifies that object, and returns it again - possibly as part of a functional stream processing chain.
+
+	Ex:
+		UnaryOperator<Person> unaryOperator = (person) -> { person.name = "New Name"; return person; };
+
+4. BinaryOperator: Takes two parameters and returns a single value. 
+
+	Both parameters and the return type must be of the same type.
+
+	The Java BinaryOperator interface is useful when implementing functions that sum, subtract, divide, multiply etc. 
+	two elements of the same type, and returns a third element of the same type.
+		
+5. Supplier: Supplies a value of some sorts. 
+	
+	The Supplier interface can also be thought of as a factory interface.
+		
+	Ex:
+		Supplier<Integer> supplier = () -> new Integer((int) (Math.random() * 1000D));
+		
+6. Consumer: Consumes a value without returning any value.
+
+	A Java Consumer implementation could be printing out a value, or writing it to a file, or over the network etc
+	
+	Ex:
+		Consumer<Integer> consumer = (value) -> System.out.println(value);
+		
+-----------------------------------------------------------------------------------------------------------------------		
+		
+Primitive versions of functional interfaces
+-------------------------------------------
+Due to the way generics are implemented, parameters of the functional interfaces (for example, Predicate<T>) can be bound only to reference types (like String, objects, etc).
+
+If you want to use primitive types with these functional interfaces, Java uses a mechanism called autoboxing to automatically convert a primitive to its corresponding wrapper type (for example, int to Integer) and vice versa.
+
+But since boxed values use more memory, this comes with a performance cost. For this reason, Java provides specialized versions of the functional interfaces to avoid autoboxing operations when the inputs or outputs are primitives.
+
+For example, 
+
+Instead of using
+		
+	Predicate<Integer> p = i -> i > 10;
+		
+You can use
+
+	IntPredicate p = i -> i > 10;	
+		
+		
+In general, the names of functional interfaces that have a primitive version for the 
+input parameter are preceded by the primitive type, like IntPredicate. 
+
+The Function interface also has variants for the output parameter like ToIntFunction<T>.		
+		
+Predicate<T>
+IntPredicate. Predicate of one int-valued argument.
+LongPredicate. Predicate of one long-valued argument.
+DoublePredicate. Predicate of one double-valued argument.
+
+Consumer<T>
+IntConsumer. Operation that accepts a single int-valued argument and returns no result.
+LongConsumer. Operation that accepts a single long-valued argument and returns no result.
+DoubleConsumer. Operation that accepts a single double-valued argument and returns no result.
+
+Function<T, R>
+IntFunction<R>. Function that accepts an int-valued argument and produces a result.
+IntToDoubleFunction. Function that accepts an int-valued argument and produces a double-valued result.
+IntToLongFunction. Function that accepts an int-valued argument and produces a long-valued result.
+LongFunction<R>. Function that accepts a long-valued argument and produces a result.
+LongToDoubleFunction. Function that accepts a long-valued argument and produces a double-valued result.
+LongToIntFunction. Function that accepts a long-valued argument and produces an int-valued result.
+DoubleFunction<R>. Function that accepts a double-valued argument and produces a result.
+ToIntFunction<T>. Function that produces an int-valued result.
+ToDoubleFunction<T>. Function that produces a double-valued result.
+ToLongFunction<T>. Function that produces a long-valued result.
+
+Supplier<T>
+BooleanSupplier. Supplier of boolean-valued results.
+IntSupplier. Supplier of int-valued results.
+LongSupplier. Supplier of long-valued results.
+DoubleSupplier. Supplier of double-valued results.
+
+UnaryOperator<T>
+IntUnaryOperator. Function operation on a single int-valued operand that produces an int-valued result.
+LongUnaryOperator. Function operation on a single long-valued operand that produces a long-valued result.
+DoubleUnaryOperator. Function operation on a single double-valued operand that produces a double-valued result.
+		
+-------------------------------------------------------------------------------------------------------------------
+
+Binary versions of functional interfaces
+----------------------------------------
+
+The following functional interfaces:
+
+Predicate<T>
+Consumer<T>
+Function<T,R>
+UnaryOperator<T>
+
+Represent an operation that takes one argument. But there are versions of these interfaces that take two arguments called. 
+These are the binary versions. They have the same semantics, the only difference is the number of arguments. 
+
+Note: There is no binary version of Supplier. This is because a Supplier takes no arguments.
+
+BiPredicate<L, R>
+(No primitive versions)
+
+BiConsumer<T, U>
+ObjIntConsumer<T>. Operation that accepts an Object-valued and an int-valued argument and returns no result.
+ObjLongConsumer<T>. Operation that accepts an Object-valued and a long-valued argument and returns no result.
+ObjDoubleConsumer<T>. Operation that accepts an Object-valued and a double-valued argument and returns no result.
+
+BiFunction<T, U, R>
+ToIntBiFunction<T, U>. Function that accepts two arguments and produces an int-valued result.
+ToLongBiFunction<T, U>. Function that accepts two arguments and produces a long-valued result.
+ToDoubleBiFunction<T, U>. Function that accepts two arguments and produces a double-valued result.
+
+BinaryOperator<T>
+IntBinaryOperator. Function operation upon two int-valued operands and producing an int-valued result.
+LongBinaryOperator. Function operation upon two long-valued operands and producing a long-valued result.
+DoubleBinaryOperator. Function operation upon two double-valued operands and producing a double-valued result.
+		
+		
+--------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
