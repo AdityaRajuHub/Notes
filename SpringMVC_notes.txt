@@ -64,3 +64,34 @@ CMI:
 	
 With Spring boot, for the jsp to be rendered in the browser we need to add jasper dependancy in the classpath,
 otherwise the jsp would just be downloaded.
+
+
+Inside a controller the data can be sent back to the jsp by setting the attributes in request, session objects,
+but it is preferrable to use ModelAndView object to set the data as attributes.
+
+The HttpServletRequest and HttpServletResponse, HttpSession objects are dependancy injected into the controller methods
+by Spring MVC
+
+@Controller
+public class DemoController {
+	
+	@RequestMapping("/home")
+	public String getHomePage(HttpServletRequest req, HttpServletResponse res) {
+		String name= req.getParameter("name");
+		//do something
+		PrintWriter writer= res.getWriter();
+		writer.write("something");
+		writer.flush();
+		writer.close();
+	}
+}
+@Controller
+public class DemoController {
+	
+	@RequestMapping("/home")
+	public String getHomePage(HttpSession session) {
+		session.setAttribute("name", "someName");
+		
+		return "home.jsp";
+	}
+}
