@@ -1,3 +1,115 @@
+
+Classpath variable is used by JVM to load user-defined classes at runtime.
+Classpath in Java is the path to directory or list of the directory which is used by ClassLoaders to find and load class in Java program.
+
+By default we set classpath env variable to jdk\lib
+
+Setting classpath
+-----------------
+
+set CLASSPATH=%CLASSPATH%;JAVA_HOME\lib;
+
+What if we need to run a java class from command line?
+First of all in order to be able to
+
+If CLASSPATH variable pointing to current directory "." and I have a class called "Test" inside package "testing" and 
+	with below directory structure C:\project\testing\Test.class in my computer.
+
+What will happen if I run the command "java Test" from directory "C:\project\testing\"? will it run?
+----------------------------------------------------------------------------------------------------
+	No, it will not run it will give you:
+	Exception in thread "main" java.lang.NoClassDefFoundError: Test
+	Since the name of the class is not Test, instead it’s testing.Test 
+		even though your classpath is set to current directory.
+
+Now what will happen if I give command  java testing.Test from C:\project\testing\ it will again not run and give an error?
+
+Exception in thread "main" java.lang.NoClassDefFoundError: testing/Test
+
+Why because now it looking for class called Test which is in package testing, starting from current directory "." 
+	but don't find it since there is no directory called "testing after this path "C:\project\testing\".
+
+To run it successfully you need to go back to directory  C:\project and now run 
+C:\project>java testing.Test  and It will run successfully
+
+Read more: https://javarevisited.blogspot.com/2011/01/how-classpath-work-in-java.html#ixzz5sL57dKr3
+
+Different example of using Classpath in Java
+-----------------------------------------------
+In case you have multiple directories defined in CLASSPATH variable, Java will look for a class starting from the first directory and 
+only look the second directory in case it did not find the specified class in the first directory. 
+This is an extremely useful feature of Classpath in java to understand and it’s very useful while debugging Java application or
+patch release kind of stuff. Let’s see  java -classpath example
+
+
+I have set my classpath environment variable as CLASSPATH=/home/tester/first;/home/tester/second;
+	Now I have Test class of different version in both first and second directory. 
+
+When I give a command "java Test" What will happen? 
+Which Test class would be picked? 
+---------------------------------------------------
+Since JVM search directory in the order they have listed in CLASSPATH variable 
+it will first go to the "first" directory and if it finds Test.class over there it will not go to /home/tester/second directory. 
+Now if you delete Test.class from /home/tester/first directory it will go to /home/tester/second directory and will pick  Test.class from there.
+
+
+I have used this feature of Java Classpath to test my patch releases, we used to have a folder called "patch" listed as first element in Java CLASSPATH 
+and any point of time we want to put any debug statement or want to test any bug we just modify Java source file, compile it and 
+generate class file and put that inside patch folder instead of creating JAR file and releasing whole new Java application. 
+This is very handy if you are working on a large project where you don't have development environment setup in Windows and your project only runs on Unix server. 
+This approach is much faster than remote debugging Java application in Eclipse
+
+
+It's also worth noting that when you use the  java -jar command line option to run your Java program as an executable JAR, 
+then the CLASSPATH environment variable will be ignored, and also the -cp and -classpath switches will be ignored. 
+In this case, you can set your Java classpath in the META-INF/MANIFEST.MF file by using the Class-Path attribute. 
+In short Class-path attribute in manifest file overrides classpath specified by -cp, -classpath or CLASSPATH environment variable.
+
+
+Summary of CLASSPATH in Java
+----------------------------
+
+1. Classpath in Java is an environment variable used by Java Virtual machine to locate or find  class files in Java during class loading.
+
+2. You can override the value of Classpath in Java defined by environment variable CLASSPATH by providing 
+	JVM command line option –cp or –classpath while running your application.
+
+3. If two classes with the same name exist in Java Classpath then the class which comes earlier in Classpath will be picked by Java Virtual Machine.
+
+4. By default CLASSPATH in Java points to current directory denoted by "." and it will look for any class only in the current directory.
+
+5. When you use the -jar command line  option to run your program as an executable JAR, 
+	then the Java CLASSPATH environment variable will be ignored, and also the -cp and -classpath switches will be ignored and, 
+		In this case, you can set your java classpath in the META-INF/MANIFEST.MF file by using the Class-Path attribute.
+
+6. In Unix of Linux, Java Classpath contains names of the directory with colon “:” separated, 
+	On Windows Java Classpath will be  semicolon “;” separated while 
+		if you defined java classpath in Manifest file those will be space separated.
+
+7. You can check value of classpath in java inside your application by looking at 
+	following system property “java.class.path”  System.getProperty("java.class.path")
+
+	Class-Path attribute is used to contain classpath inside manifest file. 
+	Also, make sure that your manifest file must end with a blank line (carriage return or new line), 
+	here is an example of java classpath in the manifest file.
+
+	Main-Class: com.classpathexample.Demo_Classpath
+	Class-Path: lib/tibco.jar lib/log4j.jar
+
+8. It’s also important to note that path specified in the manifest file is not absolute instead they are relative from application jar’s path. 
+	For example, in above if your application jar file is in C:\test directory you must need a 
+		lib directory inside test and tibco.jar and log4j.jar inside that.
+
+9. ClassNotFoundException is an Exception and will be thrown when Java program dynamically tries to load a particular 
+	Class at Runtime and don’t find that on Java classpath due to result of Class.forName() or loadClass() method invocation.
+
+10. NoClassDefFoundError comes when a particular class was present in Java Classpath during compile time but not available during runtime on Classpath in Java.
+
+
+Read more: https://javarevisited.blogspot.com/2011/01/how-classpath-work-in-java.html#ixzz5sL46tXui
+
+-------------------------------------------------------------------------------------------------------------
+
 Association
 -----------
 Association is relation between two separate classes which establishes through their Objects. 

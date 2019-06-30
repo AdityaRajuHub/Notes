@@ -60,9 +60,12 @@ Route is an ordered combination of processing steps.
 Ex:
 	Java DSL
 	--------
+	
 	from("file:target/inbox")
-	.process(new LoggingProcessor())
-	.bean(new TransformationBean(), "makeUpperCase") 	-> call makeUpperCase() method in the passed instance passing the file as input param
+	
+	.process(new LoggingProcessor())					-> Process, before Tranforming ex: logging
+	
+	.bean(new TransformationBean(), "makeUpperCase") 	-> Tranform, call makeUpperCase() method in the passed instance passing the file content as input param
 	
 	.to("file:target/outbox/dvd");
 
