@@ -1,0 +1,181 @@
+What is Apache Camel?
+---------------------
+
+Apache Camel is a powerful open source integration framework based on known Enterprise Integration patterns.
+Transfer messages between two different types of technologies.
+
+Ex: Source File to Destination File, JDBC to Java, Java to ActiveMQ etc.
+
+Provides 3 major tasks
+----------------------
+
+1. Intelligent Routing
+2. Message Transformation
+3. Protocol Mediation
+
+It is a mini ESB Enterprise Service Bus
+
+Why to use?
+-----------
+
+Integration can be messy, different protocols and data formats.
+Framework hides all complexity so you can focus on business logic.
+Easy to integrate with Spring
+Built in support for open source api's like activeMQ etc
+Very less boiler plate code
+Lightweight
+
+Camel Architecture
+------------------
+		 ___________________________________________									 ___________________________________________________________________________________
+		|Camel Integration Engine and Router		|									| 					     Camel Processors 											|
+		|-----------------------------------		| 									| 						|- Wire endpoints together				 					|
+		|Camel Endpoints							|<-------------------------------->	| Filter processor		|- Routing			 										|
+		|	|- Camel can send messages to them	 	|<--------------------------------> | Router processor		|- Transformation				 							|
+		|	|- can receive messages from them	 	|								    |						|- Mediation				 								|
+		|____|___________|___________|______________|									|						|- Interception, Enrichment, Validation, Tracking, Logging	|
+			 |			 |			 |													|___________________________________________________________________________________|	
+			 |			 |			 |												
+Endpoints:	JMS 		Http		File	........
+			Component   Component	Component
+			|- JMS API	|- ServletAPI	|- File system			Camel Component
+																	|- Provide uniform endpoint interface				
+			JMS Providers: ActiveMQ, Tibco, Sonic ...				|- Acts as connectors to all other systems
+			Webcontainer: Jetty, Tomcat ...
+			Http Client: Chrome, Mozilla ...
+			
+		DB, Files, Queue, Http	----------------------> Transformation --> Processing	-----------------> 	DB, Files, Queue, Http
+			
+Components
+----------
+AWS, MongoDB, ActiveMQ, Twitter, FILE, JDBC, JMS, SFTP, Streams, SQL, UDP, Cache, Websockets,
+SMTP, SSH, SOLR, RMI, Velocity, XSLT, TCP etc...
+
+Camel Routes
+------------
+
+Routes are crucial part of Camel
+Route is an ordered combination of processing steps.
+
+Ex:
+	Java DSL
+	--------
+	from("file:target/inbox")
+	.process(new LoggingProcessor())
+	.bean(new TransformationBean(), "makeUpperCase") 	-> call makeUpperCase() method in the passed instance passing the file as input param
+	
+	.to("file:target/outbox/dvd");
+
+	XML DSL for Spring
+	-------
+	
+	<route>
+		<from uri="file:target/inbox"/>
+		<process ref="loggingProcessor"/>
+		<bean ref="transformationBean"/>
+		<to uri="file:target/outbox/dvd"/>
+	</route>
+
+
+Processors
+----------
+
+Used to perform operation on the source before it is sent to another endpoint.
+The processor class must implement org.apache.camel.Processor interface
+
+
+Message Model
+-------------
+
+Message
+	|- Headers
+	|- Attachments
+	|- Body
+									Exchange
+		 ______________________________|____________________________________________
+		|				|			|				|				|				|	
+	Exchange ID		Exception	Properties	MEP InOnly/Inout	In Message		OutMessage
+																	|- Headers		|- Headers
+																	|- Attachments	|- Attachments
+																	|- Body			|- Body
+																	
+Enterprise Integration Patterns
+-------------------------------
+1. Splitter
+2. Aggregator
+3. Load Balancer
+4. Dynamic Router
+5. Routing Slip
+																	
+					
+Dependencies
+------------
+
+camel-core	-> contains camel context
+
+camel-spring -> integration with spring
+
+camel-jdbc -> integration with JDBC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
