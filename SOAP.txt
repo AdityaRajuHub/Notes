@@ -1,0 +1,127 @@
+SOAP
+----
+
+RMI -> Simple but both sides java
+
+Corba -> Complicated but platform-independent
+		 Need special software to make it work.
+		 
+Webservices -> No special software required
+				works over HTTP
+
+SOAP - XML + Http
+Simple Object Access Protocol
+
+
+				
+							<operation name="getEmplyeeDtlsById">
+								<employee>
+					 _________		<id>123</id> _______________
+					|			</employee>						|
+					|		</operation>						|
+					|											|
+					|				Http						|
+				 Client	------------------------------------> Server		EmployeeManagementService
+								Request via URL								|- getEmplyeeDtlsById(String id)
+																			|- recordNoteAgainstEmp()
+																			|- registerEmployee()
+									<response>
+										<employee>
+											<id>123</id>
+											<name>John</name>
+										</employee>
+									</response>
+
+A simplified WSDL(Webservice Description Language)
+-------------------------------------------------
+
+<definitions>
+	
+	<message name="getEmployeeByIdRequest">					---------> Request message format
+		<part name="id" type="integer"/>					---------> part = parameter
+	</message>
+	
+	<message name="getEmployeeByIdResponse">				---------> Response message format
+		<part name="firstName" type="string"/>				---------> part = parameter
+		<part name="lastName" type="string"/>
+	</message>
+	
+	<portType name="employeeMnagementWebService">			--------> port = Webservice
+		
+		<operation name="getEmployeeById">
+			<input message="getEmployeeByIdRequest" />
+			<output message="getEmployeeByIdResponse" />
+		</operation>
+		
+	</portType>
+	
+</definitions>
+			
+			
+JAX-WS
+------
+
+Java API for XML based Webservices
+
+Features
+--------
+
+1. Define your service automatically generate Webservice and WSDL.
+
+2. For client apps, it enables us to write java calls without need of dealing with WSDL.
+
+
+@Webservice 	-> Declare a class to be a webservice
+
+Ex: 
+
+@Webservice
+public class EmployeeMngmtServiceImpl implements EmployeMngmtService {
+
+	//some methods
+}
+
+psvm() {
+
+	javax.xml.ws.Endpoint.publish("http://localhost:8080/employeeMngmtSrvc", new EmployeeMngmtServiceImpl());
+				
+}	
+
+--------------------------------------------------------------------------------
+
+Client
+------
+
+wsimport -keep -verbose -s ./src -d ./bin/	<WSDL URL>
+
+1. Generates classes looking at WSDL
+
+2. port tag refers to the webservice, so a factory class whose name ends with 
+		Service is present for getting the specific port.
+
+	EmployeeMngmtServiceImpl webservice = new EmployeeMngmtServiceImplService().getEmployeeMngmtServicePort();
+	
+	webservice.getEmployeeById(123);
+
+
+
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
