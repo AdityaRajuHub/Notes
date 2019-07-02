@@ -71,14 +71,281 @@ Features
 2. For client apps, it enables us to write java calls without need of dealing with WSDL.
 
 
-@Webservice 	-> Declare a class to be a webservice
+@Webservice 	-> Declare a class/interface to be a webservice
+-----------
 
-Ex: 
+This JAX-WS annotation can be used in 2 ways. 
+
+1. Over a class, it means that we are trying to mark the class as the implementing the Web Service, 
+	in other words Service Implementation Bean (SIB). 
+	
+2. Over an interface, it means that we are defining a Web Service Interface (SEI), 
+	in other words Service Endpoint Interface.
+	
+	These are 2 ways of implementing Webservices
+	
+		1. Service first	-> write implementation first and then WSDL
+		2. Contract first	-> write interface first SEI and expose WSDL, then write service
+	
+	If Service implementation changes the WSDL shouldn't change otherwise client would also have to change,
+	in order to avoid WSDL change it's always better to put @Webservice over interface, that way
+	even if implementation changes WSDL remains same. 
+	For the implementation there can be a separate Service layer and our Impl class can call the service layer.
+	
+@WebService
+@SOAPBinding(style=Style.RPC)
+public interface WSAnnotationWebServiceI {
+    @WebMethod
+    float celsiusToFarhenheit(float celsius);
+}
+
+@WebService(endpointInterface="com.javacodegeeks.examples.jaxWsAnnotations.webservice.WSAnnotationWebServiceI")
+public class WsAnnotationsWebServiceImpl implements WSAnnotationWebServiceI {
+    @Override
+    public float celsiusToFarhenheit(float celsius) {
+        return ((celsius - 32)*5)/9;
+    }
+}
+
+Options
+--------
+
+1. name 	-> name of the portType in WSDL
+
+2. portName	-> name of the port tag
+
+3. serviceName	-> service name in service tag, default is className
+					WSDL url also changes since it contains service name
+
+4. targetNamespace -> namespace in XML is like a package in Java					
+						we group all the tags in one namespace so that there is no naming conflict
+						say we have a message of name getProductCategories, now if we have another message with
+						same name it will result in conflict hence namespace.
+					***default targetNamespace on definitions tag is the package name.
+
+
+
+@SOAPBinding
+------------
+refers to soap:binding tag in WSDL
+SOAP messaging style which can either be RPC or DOCUMENT
+This style represents the encoding style of message sent to and fro while using the web service.
+
+1. Document style: The SOAP Body contains one or more child elements called parts. 
+					There are no SOAP formatting rules for what the body contains; 
+					it contains whatever the sender and the receiver agrees upon.
+				
+2. RPC style: RPC implies that SOAP body contains an element with the name of the method or operation being invoked. 
+				This element in turn contains an element for each parameter of that method/operation.
+				
+If we use document then types tag refers to external xsd documents and imports schema.
+	Generally schema is used for validations, so if we want to have validations for params then we can have document style.
+	The request/response message will be validated against the schema.
+	ex: minOccurs="1" on each element makes sure that it is mandatory not-null input 
+		if minOccurs="0" accepts null value also.
+If we use rpc then everything is laid out in one xml only no refernce to external xsd's.
+
+use= Use.LITERAL/ENCODED 
+---
+It represents the formatting style of the web service message. Its value can either be literal or encoded.
+
+ENCODED -> When SOAP encoding is used, the SOAP message contains data type information within the SOAP message.
+
+	RPC/ENCODED
+	-----------
+	<soap:envelope>
+		<soap:body>
+			<myMethod>
+				<x xsi:type="xsd:int">5</x>
+				<y xsi:type="xsd:float">5.0</y>
+			</myMethod>
+		</soap:body>
+	</soap:envelope>
+
+LITERAL -> The SOAP message does not directly contain any data type information, just a reference (namespace) to the schema that is used.
+			To perform proper serialization (data translation) both, the sender and the receiver, 
+			must know the schema and must use the same rules for translating data.
+	
+	RPC/LITERAL
+	-----------
+	<soap:envelope>
+		<soap:body>
+			<myMethod>
+				<x>5</x>
+				<y>5.0</y>
+			</myMethod>
+		</soap:body>
+	</soap:envelope>
+
+	DOCUMENT/LITERAL
+	----------------
+	<soap:envelope>
+		<soap:body>
+			<x>5</x>
+			<y>5.0</y>
+		</soap:body>
+	</soap:envelope>
+	
+	
+3. @WebMethod - represents a web service operation.
+				action			->	
+				exclude 		->	don't expose as a operation
+				operationName	->	use this name instead of methodName
+				
+	@WebParam(partName="nameOftheParameter") -> Human readable name in WSDL
+
+4. @WebResult - determine what the generated WSDL shall look like
+				1. Specify partName to tell the return parameter name in WSDL to be more informational
+				2. Also WebParam.Mode that defines the direction in which parameter is flowing
+				
+				@WebResult(partName="farhenheitResponse")
+				
+				Will generate below:
+				
+				<message name="celsiusToFarhenheitResponse">
+					<part name="farhenheitResponse" type="xsd:float" />		//instead of default name="return"
+				</message>
+
+5. @WebServiceClient - present in the Service class generated by wsimport tool
+@WebServiceClient(name = "WsAnnotationsWebServiceImplService", 
+					targetNamespace = "http://webservice.jaxWsAnnotations.examples.javacodegeeks.com/", 
+					wsdlLocation = "file:/Users/saurabharora123/Downloads/ctf.wsdl")
+
+
+6. @Oneway
+	This annotation is applied to WebMethod which means that method will have only input and no output. 
+	When a @Oneway method is called, control is returned to calling method even before the actual operation is performed. 
+	It means that nothing will escape method neither response neither exception
+
+7. @HandlerChain
+		Web Services and their clients may need to access the SOAP message for additional processing of the message request or response. 
+		A SOAP message handler provides a mechanism for intercepting the SOAP message during request and response.
+
+		A handler at server side can be a validator. 
+		Let’s say we want to validate the temperature before the actual service method is called. 
+		To do this our validator class shall implement interface SOAPHandler
+		
+		public class TemperatureValidator implements SOAPHandler {
+ 
+			@Override
+			public boolean handleMessage(SOAPMessageContext context) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+		 
+			@Override
+			public boolean handleFault(SOAPMessageContext context) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+		 
+			@Override
+			public void close(MessageContext context) {
+				// TODO Auto-generated method stub
+				 
+			}
+		 
+			@Override
+			public Set getHeaders() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+		 
+		}
+		
+soap-handler.xml -> place it in the classpath
+----------------
+
+	<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+	<javaee:handler-chains xmlns:javaee="http://java.sun.com/xml/ns/javaee"
+		xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+		<javaee:handler-chain>
+			<javaee:handler>
+				<javaee:handler-class>com.javacodegeeks.examples.jaxWsAnnotations.handler.TemperatureValidator
+				</javaee:handler-class>
+			</javaee:handler>
+		</javaee:handler-chain>
+	</javaee:handler-chains>
+
+	@WebService
+	@SOAPBinding(style = Style.RPC)
+	public interface WSAnnotationsHandlerChainI {
+		@HandlerChain(file = "soap-handler.xml")
+		@WebMethod
+		float celsiusToFarhenheit(float celsius);
+	}
+
+
+Sample WSDL:
+------------
+	<definitions
+		xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+		xmlns:wsp="http://www.w3.org/ns/ws-policy" xmlns:wsp1_2="http://schemas.xmlsoap.org/ws/2004/09/policy"
+		xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+		xmlns:tns="http://webresult.jaxWsAnnotations.examples.javacodegeeks.com/"
+		xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.xmlsoap.org/wsdl/"
+		targetNamespace="http://webresult.jaxWsAnnotations.examples.javacodegeeks.com/"
+		name="WSAnnotationsWebResultImplService">
+		<types />
+		<message name="celsiusToFarhenheit">
+			<part name="arg0" type="xsd:float" />
+		</message>
+		<message name="celsiusToFarhenheitResponse">
+			<part name="return" type="xsd:float" />
+		</message>
+		<portType name="WSAnnotationsWebResultI">
+			<operation name="celsiusToFarhenheit">
+				<input
+					wsam:Action="http://webresult.jaxWsAnnotations.examples.javacodegeeks.com/WSAnnotationsWebResultI/celsiusToFarhenheitRequest"
+					message="tns:celsiusToFarhenheit" />
+				<output
+					wsam:Action="http://webresult.jaxWsAnnotations.examples.javacodegeeks.com/WSAnnotationsWebResultI/celsiusToFarhenheitResponse"
+					message="tns:celsiusToFarhenheitResponse" />
+			</operation>
+		</portType>
+		<binding name="WSAnnotationsWebResultImplPortBinding" type="tns:WSAnnotationsWebResultI">
+			<soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="rpc" />
+			<operation name="celsiusToFarhenheit">
+				<soap:operation soapAction="" />
+				<input>
+					<soap:body use="literal" namespace="http://webresult.jaxWsAnnotations.examples.javacodegeeks.com/" />
+				</input>
+				<output>
+					<soap:body use="literal" namespace="http://webresult.jaxWsAnnotations.examples.javacodegeeks.com/" />
+				</output>
+			</operation>
+		</binding>
+		<service name="WSAnnotationsWebResultImplService">
+			<port name="WSAnnotationsWebResultImplPort" binding="tns:WSAnnotationsWebResultImplPortBinding">
+				<soap:address location="http://127.0.0.1:9999/ctf" />
+			</port>
+		</service>
+	</definitions>
+
+WSDL on a high level
+--------------------
+		
+		Service -> Port 	
+				|- Binding	-> PortType	-> Operations	-> Input Message
+														|- Output Message
+														
+			Types	Types	Types	Types	Types
+	
+	Types define POJO's that are defined in Java. Say input is of type Employee
+	then Employee POJO needs to be represented as a type in WSDL and input message 
+	needs to refer to the type.
+	
+	
+
+
+
+
 
 @Webservice
 public class EmployeeMngmtServiceImpl implements EmployeMngmtService {
 
-	//some methods
+	@Webmethod
+	//some method
 }
 
 psvm() {

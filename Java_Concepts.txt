@@ -244,11 +244,35 @@ which informs JVM to operate on the variable in a synchronized way.
 
 Making a class immutable
 ------------------------
+
+Immutablity preserves Encapsulation so that no other class is able to change the state of an object outside this object.
+
 1. Make the class final so that no class can extend that class
 2. Make all the properties as private (making them final is optional if the properties are instantiated only inside constructor)
 3. No setter methods
 4. For the properties which reference mutable objects modify the getter such that 
-	we are return the reference of the cloned object and not the original reference.
+	we return the reference of the cloned object and not the original reference.
+	
+Some examples
+-------------
+
+1. java.lang.String (already mentioned)
+
+2. The wrapper classes for the primitive types: 
+	java.lang.Integer, java.lang.Byte, java.lang.Character, java.lang.Short, 
+	java.lang.Boolean, java.lang.Long, java.lang.Double, java.lang.Float
+
+3. java.lang.StackTraceElement (used in building exception stacktraces)
+
+4. Most enum classes are immutable, but this in fact depends on the concrete case. 
+(Don't implement mutable enums, this will screw you up somewhen.) 
+
+5. java.math.BigInteger and java.math.BigDecimal 
+	(at least objects of those classes themselves, subclasses could introduce mutability, though this is not a good idea)
+
+6. java.io.File. Note that this represents an object external to the VM (a file on the local system), 
+				which may or may not exist, and has some methods modifying and querying the state of this external object.
+				But the File object itself stays immutable. (All other classes in java.io are mutable.)
 	
 ---------------------------------------------------------------------------------------------------------
 
@@ -257,16 +281,27 @@ Exception Handling
 
 Throwable is the parent class of Java Exceptions Hierarchy and it has two child objects – Error and Exception
 All of the methods are defined in the base class Throwable.
-The exception classes are created to specify different kind of exception scenarios so that we can easily identify the root cause and handle the exception according to it’s type. 
+The exception classes are created to specify different kind of exception scenarios so that we can easily 
+	identify the root cause and handle the exception according to it’s type. 
 
 Exceptions are further divided into checked exceptions and runtime exception.
 
 
-Errors: Errors are exceptional scenarios that are out of scope of application and it’s not possible to anticipate and recover from them, for example hardware failure, JVM crash or out of memory error. That’s why we have a separate hierarchy of errors and we should not try to handle these situations. Some of the common Errors are OutOfMemoryError and StackOverflowError.
+Errors: Errors are exceptional scenarios that are out of scope of application and it’s not possible to anticipate and recover from them, 
+for example hardware failure, JVM crash or out of memory error. 
+That’s why we have a separate hierarchy of errors and we should not try to handle these situations. 
+Some of the common Errors are OutOfMemoryError and StackOverflowError.
 
-Checked Exceptions: Checked Exceptions are exceptional scenarios that we can anticipate in a program and try to recover from it, for example FileNotFoundException. We should catch this exception and provide useful message to user and log it properly for debugging purpose. Exception is the parent class of all Checked Exceptions and if we are throwing a checked exception, we must catch it in the same method or we have to propagate it to the caller using throws keyword.
+Checked Exceptions: Checked Exceptions are exceptional scenarios that we can anticipate in a program and try to recover from it, 
+for example FileNotFoundException. We should catch this exception and provide useful message to user and log it properly for debugging purpose. 
+Exception is the parent class of all Checked Exceptions and if we are throwing a checked exception, 
+we must catch it in the same method or we have to propagate it to the caller using throws keyword.
 
-Runtime Exception: Runtime Exceptions are cause by bad programming, for example trying to retrieve an element from the Array. We should check the length of array first before trying to retrieve the element otherwise it might throw ArrayIndexOutOfBoundException at runtime. RuntimeException is the parent class of all runtime exceptions. If we are throwing any runtime exception in a method, it’s not required to specify them in the method signature throws clause. Runtime exceptions can be avoided with better programming.
+Runtime Exception: Runtime Exceptions are cause by bad programming, for example trying to retrieve an element from the Array. 
+We should check the length of array first before trying to retrieve the element otherwise it might throw ArrayIndexOutOfBoundException at runtime. 
+RuntimeException is the parent class of all runtime exceptions. 
+If we are throwing any runtime exception in a method, it’s not required to specify them in the method signature throws clause. 
+Runtime exceptions can be avoided with better programming.
 
 Java 7 improvements
 
@@ -339,10 +374,15 @@ It is better to throw exceptions to the caller and let caller handle the excepti
 We should catch exception only when we can handle it appropriately.
 
 4. Closing Resources in finally
+
 5. Logging Exceptions
+
 6. Single catch block for multiple exceptions using | symbol - This approach will reduce our code size and it will look cleaner too.
+
 7. Custom Exceptions - define exception handling strategy at the design time, provide proper error code so that caller can handle easily
-8. Document the Exceptions Thrown – Use javadoc @throws to clearly specify the exceptions thrown by the method, it’s very helpful when you are providing an interface to other applications to use.
+
+8. Document the Exceptions Thrown – Use javadoc @throws to clearly specify the exceptions thrown by the method, 
+									it’s very helpful when you are providing an interface to other applications to use.
 
 
 
