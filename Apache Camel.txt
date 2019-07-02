@@ -464,7 +464,6 @@ JMS provides a ConnectionFactory that clients can use to create a connection wit
 JMS providers are referred to as Brokers because they manage the communication.
 	Ex: ActiveMQ
 
-
 	jms:queue:incomingOrders
 	
 	jms 			-> indicates we are using JMS component
@@ -481,22 +480,22 @@ The RoutesBuilder interface has a single method defined:
 
 class RouteBuilder implements RoutesBuilder
 
-public class MyRouteBuilder extends RouteBuilder {
-	public void configure() throws Exception {
-		...
+	public class MyRouteBuilder extends RouteBuilder {
+		public void configure() throws Exception {
+			...
+		}
 	}
-}
-CamelContext context = new DefaultCamelContext();
-context.addRoutes(new MyRouteBuilder());
+	CamelContext context = new DefaultCamelContext();
+	context.addRoutes(new MyRouteBuilder());
 
 OR
 
-CamelContext context = new DefaultCamelContext();
-context.addRoutes(new RouteBuilder() {
-	public void configure() throws Exception {
-		...
-	}
-});
+	CamelContext context = new DefaultCamelContext();
+	context.addRoutes(new RouteBuilder() {
+		public void configure() throws Exception {
+			...
+		}
+	});
 
 The from method returns a RouteDefinition object, on which you can invoke 
 	various methods that implement EIPs and other messaging concepts.
@@ -549,6 +548,171 @@ FTP consumer is fed into the processor as input; the processor doesn’t modify 
 so the exchange moves on to the JMS producer as input.
 
 FTP consumer and JMS producer since FTP is consumed and Message is produced by Camel.
+
+Integration with Spring
+-----------------------
+
+1. To load up CamelContext in Spring, you can do the following:
+
+		<beans xmlns="http://www.springframework.org/schema/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://camel.apache.org/schema/spring
+		http://camel.apache.org/schema/spring/camel-spring.xsd">
+		
+			<camelContext xmlns="http://camel.apache.org/schema/spring"/>
+		
+		</beans>
+	
+	This automatically starts SpringCamelContext, which is a subclass of
+		DefaultCamelContext, which you used for the Java DSL.
+		
+	To take it a bit further u need to specify routes in the context.
+	
+		<bean id="ftpToJmsRoute" class="camelinaction.FtpToJMSRoute"/>
+
+		<camelContext xmlns="http://camel.apache.org/schema/spring">
+			<routeBuilder ref="ftpToJmsRoute"/>
+		</camelContext>
+		
+		public class FtpToJMSRoute extends RouteBuilder {
+			public void configure() {
+				from("ftp://rider.com/orders?username=rider&password=secret")
+				.to("jms:incomingOrders");
+			}
+		}
+		
+		Dynamic Routers loading using packageScan and contextScan
+		-----------------------
+		
+		1. Load all route builders in the camelinaction.routes package, except for ones with Test in the class name
+		
+			<camelContext xmlns="http://camel.apache.org/schema/spring">
+				<packageScan>
+					<package>camelinaction.routes</package>
+					<excludes>**.*Test*</excludes>
+					<includes>**.*</includes>
+				</packageScan>
+			</camelContext>
+			
+		2. Load any Camel route builders that are marked with the @Component annotation
+			
+			<context:component-scan base-package="camelinaction.routes"/>
+				<camelContext xmlns="http://camel.apache.org/schema/spring">
+				<contextScan/>
+			</camelContext>
+			
+		
+2. To start JMS component in Spring
+
+	ConnectionFactory connectionFactory =
+	new ActiveMQConnectionFactory("vm://localhost");
+	CamelContext context = new DefaultCamelContext();
+	context.addComponent("jms", JmsComponent.jmsComponentAutoAcknowledge(connectionFactory));
+
+
+	<bean id="jms" class="org.apache.camel.component.jms.JmsComponent">
+		<property name="connectionFactory">
+			<bean class="org.apache.activemq.ActiveMQConnectionFactory">
+				<property name="brokerURL" value="vm://localhost"/>
+			</bean>
+		</property>
+	</bean>
+	
+	In this case, if you send to an endpoint such as "jms:incomingOrders", ->*********instead of id as jms we could give any name
+	
+	Camel will look up the jms bean, and if it’s of type org.apache.camel.Component, it will use that. 
+	So you don’t have to manually add components to CamelContext.
+
+
+3. Configuring multiple routes in XML DSL
+
+	<camelContext xmlns="http://camel.apache.org/schema/spring">
+		<route>
+			<from uri="file:src/data?noop=true"/>
+			<to uri="jms:incomingOrders"/>
+		</route>
+		<route>
+			<from uri="jms:incomingOrders"/>
+			<process ref="downloadLogger"/>
+		</route>
+	</camelContext>
+
+4. Configuring multiple Components of same type
+	The bean id defines what this component will be called. 
+	Give the component a more meaningful name based on the use case.
+	
+	<bean id="activemq" class="org.apache.camel.component.jms.JmsComponent">
+	...
+	</bean>
+	
+	<bean id="wmq" class="org.apache.camel.component.jms.JmsComponent">
+	...
+	</bean>
+
+	URI: activemq:myActiveMQQueue or wmq:myWebSphereQueue.
+
+5. Splitting XML into multiple files
+	
+	a. Move components to multiple files
+	
+	jms-setup.xml
+	-------------
+		
+		<beans xmlns="http://www.springframework.org/schema/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans.xsd">
+		
+			<bean id="jms" class="org.apache.camel.component.jms.JmsComponent">
+				<property name="connectionFactory">
+				<bean class="org.apache.activemq.ActiveMQConnectionFactory">
+					<property name="brokerURL" value="vm://localhost" />
+				</bean>
+				</property>
+			</bean>
+		</beans>
+
+	applicationContext.xml
+	----------------------
+	
+		<import resource="jms-setup.xml"/>
+
+	b. Move routes to multiple files
+		
+		The route tags could be defined in different xml and imported
+	
+		<camelContext xmlns="http://camel.apache.org/schema/spring">
+			<routeContextRef ref="ftpToJms"/>
+		</camelContext>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+
+
+
+
+
+
+
+
+
 
 
 
