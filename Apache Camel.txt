@@ -1,3 +1,4 @@
+
 What is Apache Camel?
 ---------------------
 
@@ -5,6 +6,16 @@ Apache Camel is a powerful open source integration framework based on known Ente
 Transfer messages between two different types of technologies.
 
 Ex: Source File to Destination File, JDBC to Java, Java to ActiveMQ etc.
+
+Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions by Gregor Hohpe and Bobby Woolf. 
+It is common for people to refer to this book by its initials EIP. As the subtitle of EIP suggests, 
+	the book focuses on design patterns for asynchronous messaging systems. 
+The book discusses 65 patterns. 
+Each pattern is given a textual name and most are also given a graphical symbol, intended to be used in architectural diagrams.
+
+***Camel lets you design and implement solutions to integration problems using enterprise integration patterns (EIPs).
+
+One of the fundamental principles of Camel is that the data could be in any format, a developer need not convert it to canonical form.
 
 Provides 3 major tasks
 ----------------------
@@ -18,23 +29,49 @@ It is a mini ESB Enterprise Service Bus
 Why to use?
 -----------
 
-Integration can be messy, different protocols and data formats.
+If we have a Legacy application (devloped in old technology) and some new application exchanging data say XML -> JSON we need to perform
+marshalling & unmarshalling and if suddenly one day Legacy changed the implementation then the new tech will be impacted.
+So in order to remove this tight coupling we can maintain additional layer to mitigate the difference between the applications.
+This helps in loose coupling.
+
+Integration can be messy 
+	- Different protocols and data formats. (support for more than 280 protocols and data types)
+
 Framework hides all complexity so you can focus on business logic.
+
+AUTOMATIC TYPE CONVERTERS >350	
+	- Accept data in most data types and convert the data to a type they’re capable of using.
+
+EXTENSIVE COMPONENT LIBRARY 
+	- (library of more than 280 components)
+
 Easy to integrate with Spring
+
 Built in support for open source api's like activeMQ etc
+
 Very less boiler plate code
-Lightweight
+
+Lightweight core ideal for Microservices
+	- about 4.9 MB and having only 1.3 MB of runtime dependencies
+	- easy to embed or deploy anywhere wherever you use Java 
+		like standalone application, microservice, web application, Spring application,
+		Java EE application, OSGi, Spring Boot, WildFly, and in cloud platforms such
+		as AWS, Kubernetes, and Cloud Foundry. 
+
 
 Camel Architecture
 ------------------
-		 ___________________________________________									 ___________________________________________________________________________________
-		|Camel Integration Engine and Router		|									| 					     Camel Processors 											|
-		|-----------------------------------		| 									| 						|- Wire endpoints together				 					|
-		|Camel Endpoints							|<-------------------------------->	| Filter processor		|- Routing			 										|
-		|	|- Camel can send messages to them	 	|<--------------------------------> | Router processor		|- Transformation				 							|
-		|	|- can receive messages from them	 	|								    |						|- Mediation				 								|
-		|____|___________|___________|______________|									|						|- Interception, Enrichment, Validation, Tracking, Logging	|
-			 |			 |			 |													|___________________________________________________________________________________|	
+At a high level, Camel is composed of routes, processors, and components. 
+All of these are contained within CamelContext.
+
+		 ___________________________________________			 _______________________________________________________________
+		|Camel Integration Engine and Router		|			| 						Camel Processors 						|
+		|-----------------------------------		| 			| 						|- Wire endpoints together				|
+		|Camel Endpoints							|<-------->	| Filter processor		|- Routing			 					|
+		|	|- Camel can send messages to them	 	|<--------> | Router processor		|- Transformation				 		|
+		|	|- can receive messages from them	 	|			|						|- Mediation				 		    |
+		|____|___________|___________|______________|			|						|- Interception, Enrichment, Validation,|
+			 |			 |			 |							|__________________________Tracking, Logging____________________|	
 			 |			 |			 |												
 Endpoints:	JMS 		Http		File	........
 			Component   Component	Component
@@ -44,21 +81,135 @@ Endpoints:	JMS 		Http		File	........
 			Webcontainer: Jetty, Tomcat ...
 			Http Client: Chrome, Mozilla ...
 			
-		DB, Files, Queue, Http	----------------------> Transformation --> Processing	-----------------> 	DB, Files, Queue, Http
+[ DB, Files, Queue, Http ]	----------------------> Transformation --> Processing	-----------------> 	[ DB, Files, Queue, Http ]
 			
+
+At the core of the Camel framework is a routing engine, or more precisely a routing-engine builder. 
+
+It allows you to define your own routing rules, decide from which sources to accept messages, 
+	and determine how to process and send those messages to other destinations. 
+Camel uses an integration language that allows you to define complex routing rules, akin to business processes.
+
+Camel has two main ways of defining routing rules: 
+	1. Java-based domain specific language (DSL) and 
+	2. XML configuration format.
+
 Components
 ----------
-AWS, MongoDB, ActiveMQ, Twitter, FILE, JDBC, JMS, SFTP, Streams, SQL, UDP, Cache, Websockets,
-SMTP, SSH, SOLR, RMI, Velocity, XSLT, TCP etc...
+Components are the extension points in Camel for adding connectivity to other systems.
+To expose these systems to the rest of Camel, components provide an endpoint interface.
+
+They’re associated with a name that’s used in a URI, and they act as a factory of endpoints.
+Ex: FileComponent is referred to by file in a URI and it create FileEndpoints.
+
+Systems: AWS, MongoDB, ActiveMQ, Twitter, FILE, JDBC, JMS, SFTP, Streams, SQL, UDP, Cache, Websockets,
+		 SMTP, SSH, SOLR, RMI, Velocity, XSLT, TCP etc...
+
+Ex: 
+	ConnectionFactory connectionFactory= new ActiveMQConnectionFactory();
+	camelContext.addComponent("jms", JmsComponent.jmsComponentAutoAcknowledge(connectionFactory));
+
+Endpoint
+--------
+
+It is a camel abstraction that models the end of a channel through which system sends/receives messages.
+Configure endpoints using URI like below
+
+		file:data/inbox?delay=5000
+		  ❶	 ❷			❸
+1. Scheme	
+2. Context path 
+3. Options
+
+The scheme ❶ denotes which Camel component handles that type of endpoint. 
+In this case, the scheme of file selects FileComponent.
+FileComponent then works as a factory, creating FileEndpoint based on the
+	remaining parts of the URI. 
+
+The context path data/inbox ❷ tells FileComponent that the starting folder is data/inbox. 
+
+The option, delay=5000 ❸ indicates that files should be polled at a 5-second interval.
+
+An endpoint acts as a factory which produces Producer and Consumer which interact by sending/receiving messages to/from an endpoint.
+
+			creates				creates
+Component --------> Endpoint ----------> Consumer calls Processors
+						|	|----------> Producer	
+						|	
+					Creates Exchange
+
+Consumer					
+--------
+
+Consumer is the service that receives messages from an external system (say file system), wraps them in an exchange
+	and sends them for processing. Think "from" in DSL.
+	
+	2 types Event driven and Polling consumer
+	
+	Event Driven -> Asynchronous receiver
+					Client-server architectures and web services.
+					Ex: Listens on messaging channel, such as a TCP/IP port, JMS queue, 
+						Twitter handle, Amazon SQS queue, WebSocket, and so on
+	
+	Polling		 -> Synchronous receiver
+					Polls at scheduled intervals. 
+					Example Components: File, FTP, and email
+					
+Processors
+----------
+Used to perform operation on the source before it is sent to another processor or MEP or to destination endpoint.
+The output from one processor can be input to another processor and so on.
+				out			in				out			in									InOnly
+	Consumer-----------------> Processor ---------------> Processor ---------------> MEP----------->
+		|																			  |
+		|_____________________________________________________________________________|InOut
+
+
+***MEP - Message Exchange Pattern
+Consumer is the originator of the request. It is "from" in DSL.
+
+1. At each processor step, the out message from the previous step is the in message of the next. 
+2. In many cases, processors don’t set an out message, so in this case the in message is reused. 
+3. At the end of a route, the MEP of the exchange determines whether a reply needs to be sent
+	back to the caller of the route. 
+4. If the MEP is InOnly, no reply will be sent back. 
+5. If it’s InOut, Camel will take the out message from the last step and return it. 
+
+The processor class must implement org.apache.camel.Processor interface and implements below one method
+
+	public void process(Exchange exchange) throws Exception;
 
 Camel Routes
 ------------
 
-Routes are crucial part of Camel
-Route is an ordered combination of processing steps.
+1. Routes are crucial part of Camel
+2. Route is an ordered combination of processing steps.
+3. Each route in Camel has a unique identifier that’s used for logging,
+	debugging, monitoring, and starting and stopping routes.
+	
+4. Routes also have exactly one input source for messages, 
+	so they’re effectively tied to an input endpoint.
 
-Ex:
-	Java DSL
+Although we can mention multiple input sources to a route but internally it is split into multiple routes.
+
+Syntax:
+-------
+from("jms:queue:A", "jms:queue:B", "jms:queue:C").to("jms:queue:D");
+
+Under the hood:
+---------------
+from("jms:queue:A").to("jms:queue:D");
+from("jms:queue:B").to("jms:queue:D");
+from("jms:queue:C").to("jms:queue:D");
+
+
+DOMAIN-SPECIFIC LANGUAGE (DSL)
+------------------------
+
+The purpose of the DSL is to allow the developer to focus on the integration problem rather than 
+on the tool—the programming language.
+
+	Java DSL 
 	--------
 	
 	from("file:target/inbox")
@@ -80,28 +231,78 @@ Ex:
 	</route>
 
 
-Processors
-----------
+Filters
+-------
 
-Used to perform operation on the source before it is sent to another endpoint.
-The processor class must implement org.apache.camel.Processor interface
+Used to filter the source which satisfies some criteria & send to target
 
+1. move file only if filename is of certain type 		-> 	from("file:inbox").filter(header(Exchange.FILE_NAME).endsWith(".txt")).to("file:outbox")
+
+2. move file only if the content contains some string	->	from("file:inbox").filter(body().contains("Java")).to("file:outbox")
+
+3. convert txt file to csv file	
+
+4. scan recursively in a subfolder and include only .txt files -> from("file:data/inbox?recursive=true&include=.*txt$")
 
 Message Model
 -------------
 
-Message
-	|- Headers
-	|- Attachments
-	|- Body
+Camel uses two abstractions for modeling messages
+
+1. org.apache.camel.Message 
+	The fundamental entity containing the data being carried and routed in Camel.
+
+2. org.apache.camel.Exchange 
+	The Camel abstraction for an exchange of messages. This exchange of messages has an in message, 
+	and as a reply, an out message.
+
+Messages are entities used by systems to communicate with each other using messaging channels.
+Messages flow in one direction from sender to receiver.
+
+Message (unique ID)
+	|- Headers				(sender identifiers, hints about content encoding, authentication information, and so on.)
+	|- Attachments 			(optional, typically for webservice and email components)
+	|- Body 				(a Payload of type java.lang.Object)
+								When the sender and receiver use different Body formats, Camel provides mechanisms to
+								transform the data into an acceptable format, and in those cases the
+								conversion happens automatically with type converters, behind the scenes.
+
+	During routing, messages are contained in an exchange.
+	
 									Exchange
 		 ______________________________|____________________________________________
 		|				|			|				|				|				|	
-	Exchange ID		Exception	Properties	MEP InOnly/Inout	In Message		OutMessage
-																	|- Headers		|- Headers
+	Exchange ID		Exception	Properties	 	   MEP		In Message		OutMessage
+											(InOnly/InOut)			|- Headers		|- Headers
 																	|- Attachments	|- Attachments
 																	|- Body			|- Body
-																	
+		
+	MEP -> Message Exchange Pattern
+			used to differenciate between one-way or request-response messaging styles.
+			InOnly -> JMS messaging
+			InOut  -> Http based Client Server transports
+	
+	Exception
+		If an error occurs at any time during routing, an Exception will be set in the exception field.
+	
+	Properties 
+		Similar to message headers, but they last for the duration of the entire exchange. 
+			Properties are used to contain global-level information, whereas message headers are specific to a particular message. 
+			Camel itself adds various properties to the exchange during routing. You, as a developer,
+			can store and retrieve properties at any point during the lifetime of an exchange.
+			
+	In message
+			This is the input message, which is mandatory. 
+			The in message contains the request message.
+
+	Out message
+			This is an optional message that exists only if the MEP is InOut. 
+			The out message contains the reply message.
+
+***The exchange is the same for the entire lifecycle of routing, but the messages
+	can change, for instance, if messages are transformed from one format to another.
+	
+																
 Enterprise Integration Patterns
 -------------------------------
 1. Splitter
@@ -109,7 +310,8 @@ Enterprise Integration Patterns
 3. Load Balancer
 4. Dynamic Router
 5. Routing Slip
-																	
+			
+		
 					
 Dependencies
 ------------
@@ -120,7 +322,233 @@ camel-spring -> integration with spring
 
 camel-jdbc -> integration with JDBC
 
+camel-jms
 
+activemq-all
+activemq-camel -> Active MQ
+
+camel-ftp
+
+--------------------------------------------------------------------------------------------------
+
+Listing 1.1 Routing files from one folder to another in plain Java
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+public class FileCopier {
+	public static void main(String args[]) throws Exception {
+			File inboxDirectory = new File("data/inbox");
+			File outboxDirectory = new File("data/outbox");
+			outboxDirectory.mkdir();
+			File[] files = inboxDirectory.listFiles();
+			for (File source : files) {
+				if (source.isFile()) {
+					File dest = new File(
+					outboxDirectory.getPath() + File.separator + source.getName());
+					copyFile(source, dest);
+				}
+			}
+	}
+	private static void copyFile(File source, File dest) throws IOException {
+		OutputStream out = new FileOutputStream(dest);
+		byte[] buffer = new byte[(int) source.length()];
+		FileInputStream in = new FileInputStream(source);
+		in.read(buffer);
+		try {
+			out.write(buffer);
+		} finally {
+			out.close();
+			in.close();
+		}
+	}
+}
+
+Listing 1.2 Routing files from one folder to another with Apache Camel
+
+import org.apache.camel.CamelContext;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.DefaultCamelContext;
+
+public class FileCopierWithCamel {
+
+	public static void main(String args[]) throws Exception {
+		CamelContext context = new DefaultCamelContext();
+		context.addRoutes(new RouteBuilder() {
+		public void configure() {
+			from("file:data/inbox?noop=true") 	//noop tell camel to leave the source file as is.
+			//Routes files from inbox to outbox
+			.to("file:data/outbox");
+			}
+		});
+		context.start();
+		Thread.sleep(10000);	//allow Camel application time to copy the files.
+		context.stop();
+	}
+}
+
+
+Camel Context
+-------------
+
+Camel's Runtime system.
+Is a container of sorts.
+
+Each camel context contains several services below
+
+1. Components
+	All components are loaded on the fly either by autodiscovery or when a new bundle is activated in OSGi container
+
+2. Endpoints 
+	Contains all the endpoints that have been used
+	
+3. Routes
+	Camel Context contains mutiple RouteBuilder's which in turn contains multiple routes.
+	
+4. Type converters
+
+5. Data formatters
+
+6. Registry
+	contains registry to lookup beans
+	
+7. Languages
+	Ex: XPath
+
+
+Routes
+------
+
+1. Download orders from ftp server and consume them
+
+ftp://rider.com/orders?username=rider&password=secret
+
+OR
+
+ftp://rider:secret@rider.com/orders
+
+Camel first looks up the ftp scheme in the component registry, which resolves to FtpComponent. 
+
+FtpComponent then works as a factory, creating FtpEndpoint based on the remaining context path and options.
+
+The context path of rider.com/orders tells FtpComponent that it should log
+into the FTP server at rider.com on the default FTP port and change the directory to orders. 
+
+Finally, the only options specified are username and password, which are used to log in to the FTP server.
+
+
+from("ftp://rider.com/orders?username=rider&password=secret")
+
+That’s all you need to do to consume files from an FTP server.
+
+
+2. Send the orders you downloaded from the FTP server to a JMS queue.
+
+What is JMS?
+------------
+
+Java API to create, send, receive and read messages.
+It guarantees messaging is asynchronous and promises reliability, guaranteed and only-once delivery.
+
+The communication between producer and consumer happens through an intermediary - a JMS destination.
+
+JMS destination could be a Queue or a Topic.
+
+In a Queue each message has only one consumer, but in a Topic 
+it is publish/subscribe scheme, whoever is subscribed to the Topic receives the message.
+
+JMS provides a ConnectionFactory that clients can use to create a connection with a JMS provider.
+JMS providers are referred to as Brokers because they manage the communication.
+	Ex: ActiveMQ
+
+
+	jms:queue:incomingOrders
+	
+	jms 			-> indicates we are using JMS component
+	queue(default) 	-> send to a queue not a topic
+	incomingOrders 	-> name of the queue
+
+
+
+The addRoutes method of CamelContext accepts RoutesBuilder, not just RouteBuilder. 
+
+The RoutesBuilder interface has a single method defined:
+
+	void addRoutesToCamelContext(CamelContext context) throws Exception;
+
+class RouteBuilder implements RoutesBuilder
+
+public class MyRouteBuilder extends RouteBuilder {
+	public void configure() throws Exception {
+		...
+	}
+}
+CamelContext context = new DefaultCamelContext();
+context.addRoutes(new MyRouteBuilder());
+
+OR
+
+CamelContext context = new DefaultCamelContext();
+context.addRoutes(new RouteBuilder() {
+	public void configure() throws Exception {
+		...
+	}
+});
+
+The from method returns a RouteDefinition object, on which you can invoke 
+	various methods that implement EIPs and other messaging concepts.
+
+Camel’s type-converter facility automatically converts FTP file type to the JMS message type.
+
+import javax.jms.ConnectionFactory;
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.camel.CamelContext;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.jms.JmsComponent;
+import org.apache.camel.impl.DefaultCamelContext;
+public class FtpToJMSExample {
+
+public static void main(String args[]) throws Exception {
+
+	CamelContext context = new DefaultCamelContext();
+	ConnectionFactory connectionFactory =
+	new ActiveMQConnectionFactory("vm://localhost");
+	context.addComponent("jms",
+	JmsComponent.jmsComponentAutoAcknowledge(connectionFactory));
+	context.addRoutes(new RouteBuilder() {
+		public void configure() {
+			from("ftp://rider.com/orders" + "?username=rider&password=secret") 
+			.to("jms:incomingOrders"); 
+		}
+	});
+	context.start();
+	Thread.sleep(10000);
+	context.stop();
+	}
+}
+
+Processor
+---------
+
+Get full access to the message exchange, letting you do pretty much whatever you want with the payload or headers.
+
+	from("ftp://rider.com/orders?username=rider&password=secret")
+	.process(new Processor() {
+		public void process(Exchange exchange) throws Exception {
+			System.out.println("We just downloaded: " + exchange.getIn().getHeader("CamelFileName"));
+		}
+	})
+	.to("jms:incomingOrders");
+
+This route will now print the filename of the order that was downloaded before sending it to the JMS queue.
+
+FTP consumer is fed into the processor as input; the processor doesn’t modify the message payload or headers, 
+so the exchange moves on to the JMS producer as input.
+
+FTP consumer and JMS producer since FTP is consumed and Message is produced by Camel.
 
 
 
