@@ -287,7 +287,7 @@ LITERAL -> The SOAP message does not directly contain any data type information,
 
 	Is there anything you can do to improve upon this? 
 	--------------------------------------------------
-	Yes. It's called the document/literal wrapped pattern.
+		Yes. It's called the document/literal wrapped pattern.
 	
 	
 	Document/literal wrapped
@@ -343,16 +343,16 @@ LITERAL -> The SOAP message does not directly contain any data type information,
 	
 	These are the basic characteristics of the document/literal wrapped pattern:
 
-	1. The input message has a single part.
-	2. The part is an element.
-	3. The element has the same name as the operation.
-	4. The element's complex type has no attributes.
+		1. The input message has a single part.
+		2. The part is an element.
+		3. The element has the same name as the operation.
+		4. The element's complex type has no attributes.
 	
 	Advantages:
 	----------
-	1. There is no type encoding info.
-	2. Everything that appears in the soap:body is defined by the schema, so you can easily validate this message.
-	3. Once again, you have the method name in the SOAP message.
+		1. There is no type encoding info.
+		2. Everything that appears in the soap:body is defined by the schema, so you can easily validate this message.
+		3. Once again, you have the method name in the SOAP message.
 	
 	Weaknesses:
 	----------
@@ -362,6 +362,16 @@ LITERAL -> The SOAP message does not directly contain any data type information,
 	When we have method overloading then RPC/literal is the best style to use.
 	
 	Refer to https://www.ibm.com/developerworks/library/ws-whichwsdl/
+
+	Conclusion
+	----------
+		1. As you would have noticed in the two SOAP response messages that it is possible to validate the SOAP response 
+			message in case of DOCUMENT style but not in RPC style web services.
+		
+		2. The basic disadvantage of using RPC style is that it doesn’t support richer data types and that of using Document style 
+			is that it brings some complexity in the form of XSD for defining the richer data types.
+		
+		3. The choice of using one out of these depends upon the operation/method requirements and the expected clients.
 
 -----------------------------------------------------------------------------------
 	
