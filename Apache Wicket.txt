@@ -1,167 +1,170 @@
+
 Apache Wicket is a Java-based web application framework
+-------------------------------------------------------
+
 Apache Wicket gives you a simple framework for creating powerful, reusable components and 
 	offers an object oriented methodology to web development while requiring only Java and HTML.
 	
 Any Wicket component that requires view markup in the form of HTML needs to be side-by-side with the Java file. 
+
 Using Maven however, we can separate the source directories into java/ and resources/ to give some distinction.
 
 Set up the WicketFilter and point it to our implementation of WebApplication along with the URL mapping.
 
-<web-app>
-  <filter>
-    <filter-name>wicketFilter</filter-name>
-    <filter-class>org.apache.wicket.protocol.http.
-WicketFilter</filter-class>
-<init-param>
-      <param-name>applicationClassName</param-name>
-      <param-value>com.mysticcoders.refcardmaker.RefcardApplication</param-value>
-    </init-param>
-    <init-param>
-      <param-name>filterPath</param-name>
-      <param-value>/*</param-value>
-    </init-param>
-  </filter>
-  <filter-mapping>
-    <filter-name>wicketFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
-</web-app>
+	<web-app>
+	  <filter>
+		<filter-name>wicketFilter</filter-name>
+		<filter-class>org.apache.wicket.protocol.http.WicketFilter</filter-class>
+		<init-param>
+		  <param-name>applicationClassName</param-name>
+		  <param-value>com.mysticcoders.refcardmaker.RefcardApplication</param-value>
+		</init-param>
+		<init-param>
+		  <param-name>filterPath</param-name>
+		  <param-value>/*</param-value>
+		</init-param>
+	  </filter>
+	  <filter-mapping>
+		<filter-name>wicketFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	  </filter-mapping>
+	</web-app>
 
 The RefcardApplication is the main class extends WebApplication
 contains 2 methods
 
-1. getHomePage()
-2. init()
+	1. getHomePage()
+	2. init()
 
 Components	(extends Panel)
 ----------
 
-Wicket is component based. A component is a reusable piece of code which is pluggable.
-A web page may be made up of components.
-Here component is nothing but view and controller.
-Component can display data and can react to events from the end user.
+	Wicket is component based. A component is a reusable piece of code which is pluggable.
+	A web page may be made up of components.
+	Here component is nothing but view and controller.
+	Component can display data and can react to events from the end user.
 
-The three distinct items form a component
+	The three distinct items form a component
 
-1. Java Class implementation – defines the behavior and responsibilities
-2. HTML Markup – defines the Components using their identifiers within view markup to determine where it shows to the end user
-3. The Model – provides data to the Component
+		1. Java Class implementation – defines the behavior and responsibilities
+		2. HTML Markup – defines the Components using their identifiers within view markup to determine where it shows to the end user
+		3. The Model – provides data to the Component
 
-A webpage class extends WebPage and includes code to use many components.
+	A webpage class extends WebPage and includes code to use many components.
 
 Some more building blocks of page
 
 1. Label
 --------
-When developing your application, if you’d like to show text on the frontend chances are pretty good that you’ll be using the Label Component. 
-A Label contains a Model object which it will convert to a String for display on the frontend.
+	When developing your application, if you’d like to show text on the frontend chances are pretty good that you’ll be using the Label Component. 
+	A Label contains a Model object which it will convert to a String for display on the frontend.
 
-HTML
-<span wicket:id=”message”>[message]</span>
+	HTML
+	<span wicket:id=”message”>[message]</span>
 
-...
+	...
 
-Java code
-add(new Label(“message”, “Hello, World!”));
+	Java code
+	add(new Label(“message”, “Hello, World!”));
 
 
 
 2. Link
 -------
-Below is a list of the different types of links, bookmarkable and non-bookmarkable, and how they are used to navigate from page-to-page.
+	Below is a list of the different types of links, bookmarkable and non-bookmarkable, and how they are used to navigate from page-to-page.
 
-Name						Description
-Link						If linking to another Page, it is best to use a Link in most instances:
-			
-							add(new Link(“myLink”) {
-								public void onClick() {
-								  setResponsePage(MyNewPage.class);
-							  }
-							}
+	Name						Description
+	Link						If linking to another Page, it is best to use a Link in most instances:
+				
+								add(new Link(“myLink”) {
+									public void onClick() {
+									  setResponsePage(MyNewPage.class);
+								  }
+								}
 
 
-BookmarkablePageLink		A Bookmarkable page gives you a human readable URL that can be linked to directly from outside of the application. 
-							The default look of this URL can be overridden as we’ll see in the next section. 
-							add(new BookmarkablePageLink(“myLink”, MyNewPage.class);
+	BookmarkablePageLink		A Bookmarkable page gives you a human readable URL that can be linked to directly from outside of the application. 
+								The default look of this URL can be overridden as we’ll see in the next section. 
+								add(new BookmarkablePageLink(“myLink”, MyNewPage.class);
 
-ExternalLink				If linking to an external website that is not within your application, here’s the Link component you’ll need and an example: 
-							add(new ExternalLink(“myLink”, http://www. mysticcoders.com, “Mystic”);
+	ExternalLink				If linking to an external website that is not within your application, here’s the Link component you’ll need and an example: 
+								add(new ExternalLink(“myLink”, http://www. mysticcoders.com, “Mystic”);
 
 
 3. Repeaters
 ------------
 
-Due to the lack of any executable code inside of Wicket’s HTML templates, the method of showing lists may seem a little counterintuitive at first. 
-One of the simplest methods for showing a list of data is the RepeatingView.
+	Due to the lack of any executable code inside of Wicket’s HTML templates, the method of showing lists may seem a little counterintuitive at first. 
+	One of the simplest methods for showing a list of data is the RepeatingView.
 
-	<ul>
-		<li wicket:id=”list”></li>
-	</ul>
-	
-	...
-	
-	RepeatingView list = new RepeatingView(“list”);
-	add(list);
-	for(int i = 1; i <= 10; i++) {
-		list.add(new Label(list.newChildId(), “Item “ + i));
-	}
+		<ul>
+			<li wicket:id=”list”></li>
+		</ul>
+		
+		...
+		
+		RepeatingView list = new RepeatingView(“list”);
+		add(list);
+		for(int i = 1; i <= 10; i++) {
+			list.add(new Label(list.newChildId(), “Item “ + i));
+		}
 
 
-RepeatingView provides a method .newChildId() which should be used to ensure the Component identifier is unique. 
-But this is for simple app but as ur needs get more complex we can use 
-ListView for complex markup and business logic
+	RepeatingView provides a method .newChildId() which should be used to ensure the Component identifier is unique. 
+	But this is for simple app but as ur needs get more complex we can use 
+	ListView for complex markup and business logic
 
-	<ul>
-	   <li wicket:id=”list”><span wicket:id=”description”>[description]</span></li>
-	</ul>
-	
-	...
-	
-	ListView list = new ListView(“list”, Arrays.asList(“1”, “2”, “3”,
-	“4”, “5”, “6”, “7”, “8”, “9”, “10”) {
-	   @Override
-	   protected void populateItem(ListItem item) {
-		  String text = (String)item.getModelObject();
-		  item.add(new Label(“description”, text));
-	   }
-	};
-	add(list);
+		<ul>
+		   <li wicket:id=”list”><span wicket:id=”description”>[description]</span></li>
+		</ul>
+		
+		...
+		
+		ListView list = new ListView(“list”, Arrays.asList(“1”, “2”, “3”,
+		“4”, “5”, “6”, “7”, “8”, “9”, “10”) {
+		   @Override
+		   protected void populateItem(ListItem item) {
+			  String text = (String)item.getModelObject();
+			  item.add(new Label(“description”, text));
+		   }
+		};
+		add(list);
 
 
 Drawback:
 ----------
 
-Entirety of the list must be held in memory. This doesn’t work well for large data sets, so if you need finer grain control 
-on how much data is kept in memory, paging, etc., DataTable or DataView is something to look into.
+	Entirety of the list must be held in memory. This doesn’t work well for large data sets, so if you need finer grain control 
+	on how much data is kept in memory, paging, etc., DataTable or DataView is something to look into.
 
-Since Wicket always needs a tag to bind to, even for a label, a <span> tag is sometimes easier to place into your markup; 
-however, this can throw your CSS design off. .setRenderBodyOnly(true) can be used so the span never shows on the frontend 
-	but be careful using this with any AJAX enabled components, since it requires the tag to stick around.
+	Since Wicket always needs a tag to bind to, even for a label, a <span> tag is sometimes easier to place into your markup; 
+	however, this can throw your CSS design off. .setRenderBodyOnly(true) can be used so the span never shows on the frontend 
+		but be careful using this with any AJAX enabled components, since it requires the tag to stick around.
 
 Page and Navigation
 -------------------
-A Wicket Page is a component that allows you to group components together that make up your view. All Components will be related in a tree hierarchy to your page, and if the page is bookmarkable you can navigate directly to it. Tocreate a new page, simply extend WebPage and start adding components.
+	A Wicket Page is a component that allows you to group components together that make up your view. All Components will be related in a tree hierarchy to your page, and if the page is bookmarkable you can navigate directly to it. Tocreate a new page, simply extend WebPage and start adding components.
 
-Most webapps will share common areas that you don’t want to duplicate on every page -- this is where markup inheritance comes into play. Because every page is just a component, you can extend from a base page and inherit things like header, navigation, footer, whatever fits your requirements. Here’s an example:
+	Most webapps will share common areas that you don’t want to duplicate on every page -- this is where markup inheritance comes into play. Because every page is just a component, you can extend from a base page and inherit things like header, navigation, footer, whatever fits your requirements. Here’s an example:
 
-public class BasePage extends WebPage {
-   ... header, footer, navigation, etc ...
-}
-public class HomePage extends BasePage {
-... everything else, the content of your pages...
-}
+	public class BasePage extends WebPage {
+	   ... header, footer, navigation, etc ...
+	}
+	public class HomePage extends BasePage {
+	... everything else, the content of your pages...
+	}
 
 
 Markup
 ------
-Apache Wicket does require adding some attributes and tags to otherwise pristine X/HTML pages to achieve binding with Component code. 
+	Apache Wicket does require adding some attributes and tags to otherwise pristine X/HTML pages to achieve binding with Component code. 
 
-wicket:id				Used on any X/HTML element you want to bind a compoent to
+	wicket:id				Used on any X/HTML element you want to bind a compoent to
 
-wicket:message			Used on any tag we want to fill an attribute with a resource bundle value. 
-						This tag will look for the given key in the resource bundle component hierarchy 
-						and replace the tag with the String retrieved from that bundle property. 
-						To pull the resource property page.label: <wicket:message key=”page.label”>[page label]</ wicket:message>
+	wicket:message			Used on any tag we want to fill an attribute with a resource bundle value. 
+							This tag will look for the given key in the resource bundle component hierarchy 
+							and replace the tag with the String retrieved from that bundle property. 
+							To pull the resource property page.label: <wicket:message key=”page.label”>[page label]</ wicket:message>
 
 
 
