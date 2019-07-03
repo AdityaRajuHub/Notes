@@ -242,6 +242,44 @@ which informs JVM to operate on the variable in a synchronized way.
 
 ---------------------------------------------------------------------------------------------------------
 
+Cloneable
+---------
+
+It is a marker interface in Java which doesn't have any methods. 
+
+If we are using clone() method on an object and if it's class doesn't implements marker interface
+	then the exception CloneNotSupportedException is thrown.
+
+By default Object.clone() performs a shallow copy which means all the references are copied directly.
+	
+	1. If the class has only primitive data type members then a completely new copy of the object will be created 
+		and the reference to the new object copy will be returned.
+	
+	2. If the class contains members of any class type then only the object references to those members are copied 
+		and hence the member references in both the original object as well as the cloned object refer to the same object.
+		
+	1) x.clone() != x will be true	
+			//cloned object will have separate memory address assignment.
+	
+	2) x.clone().getClass() == x.getClass() will be true, but these are not absolute requirements. //
+			//original and cloned objects should have same class type, but it is not mandatory.
+	
+	3) x.clone().equals(x) will be true, this is not an absolute requirement.
+			// the default equals() method will check the hashcode of both references so it will be false unless
+				we override equals method.
+			//original and cloned objects should have be equal using equals() method, but it is not mandatory.
+			
+In order to perform deep copy meaning creating new objects for references shd be done by overriding clone().
+
+	public Object clone() throws CloneNotSupportedException
+	
+	1. No need to separately copy primitives.
+	2. All the member classes in original class should support cloning and in clone method of original class 
+		in context should call super.clone() on all member classes.
+	3. If any member class does not support cloning then in clone method, one must create a new instance of that 
+		member class and copy all its attributes one by one to new member class object. 
+		This new member class object will be set in cloned object.
+
 Making a class immutable
 ------------------------
 

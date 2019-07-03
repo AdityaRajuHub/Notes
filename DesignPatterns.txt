@@ -1,247 +1,405 @@
 
+Design patterns, as name suggest, are solutions for most commonly (and frequently) occurred problems while designing a software. 
+These patterns are mostly “evolved” rather than “discovered”. 
+A lot of learning, by lots of professional, have been summarized into these design patterns. 
+None of these patterns force you anything in regard to implementation; 
+they are just guidelines to solve a particular problem – in a particular way – in particular contexts.
+Code implementation is your responsibility.
+
 3 types of design patterns
 
 1. Creational
+		Creational patterns often used in place of direct instantiation with constructors.
+		They can provide a great deal of flexibility about which objects are created, 
+			how those objects are created, and how they are initialized.
 2. Behavioral
+		
 3. Structural
 
 Creational
 ----------
 
 1. Singleton Pattern 
+--------------------
+	Singleton enables an application to have one and only one instance of a class per JVM.
+	Says that just "define a class that has only one instance and provides a global point of access to it".
 
-says that just "define a class that has only one instance and provides a global point of access to it".
+	Early Instantiation: creation of instance at load time.
+	Lazy Instantiation:  creation of instance when required.
 
-Early Instantiation: creation of instance at load time.
-Lazy Instantiation: creation of instance when required.
+	Advantages:
+	----------
+		Saves memory because object is not created at each request. Only single instance is reused again and again.
+		Used for Statetless beans.
+		Singleton pattern is mostly used in multi-threaded and database applications. 
+		It is used in logging, caching, thread pools, configuration settings etc.
 
-Advantages:
-----------
-Saves memory because object is not created at each request. Only single instance is reused again and again.
-Used for Staetless beans.
-Singleton pattern is mostly used in multi-threaded and database applications. 
-It is used in logging, caching, thread pools, configuration settings etc.
+		How to create Singleton design pattern?
 
-How to create Singleton design pattern?
+			Static member variable: It gets memory only once because of static, it contains the instance of the Singleton class.
+			Private constructor: It will prevent to instantiate the Singleton class from outside the class.
+			Static factory method: This provides the global point of access to the Singleton object and returns the instance to the caller.
 
-Static member variable: It gets memory only once because of static, itcontains the instance of the Singleton class.
-Private constructor: It will prevent to instantiate the Singleton class from outside the class.
-Static factory method: This provides the global point of access to the Singleton object and returns the instance to the caller.
+	Early Instantiation
+	-------------------
+		class A{  
+		 private static A obj = new A();//Early, instance will be created at load time  
+		 private A(){}  
+		   
+		 public static A getA(){  
+		  return obj;  
+		 }  
+		  
+		 public void doSomething(){  
+		 //write your code  
+		 }  
+		}  
 
-Early Instantiation
--------------------
-class A{  
- private static A obj=new A();//Early, instance will be created at load time  
- private A(){}  
-   
- public static A getA(){  
-  return obj;  
- }  
-  
- public void doSomething(){  
- //write your code  
- }  
-}  
+	Lazy Initialization
+	-------------------
 
-Lazy Initialization
--------------------
+		public static A getA(){  
+			if (obj == null){  
+			  synchronized(Singleton.class){  
+				if (obj == null){  
+					obj = new Singleton();//instance will be created at request time  
+				}  
+			  }              
+			}  
+			return obj;  
+		} 
+		
+		Also a singleton class need to override clone() method as below
+		
+		public Object clone() throws CloneNotSupportedException {
+			throw new CloneNotSupportedException(); 
+		}
 
- public static A getA(){  
-   if (obj == null){  
-      synchronized(Singleton.class){  
-        if (obj == null){  
-            obj = new Singleton();//instance will be created at request time  
-        }  
-    }              
-    }  
-  return obj;  
- } 
- 
- //-----------------------------------------------------------------------------------------
+	 //-----------------------------------------------------------------------------------------
  
  Prototype
  ---------
- 
-Prototype Pattern says that cloning of an existing object instead of creating new one and can also be customized as per the requirement.
-
-This pattern should be followed, if the cost of creating a new object is expensive and resource intensive.
-
-Object cloning:
---------------
-The initial values are setup and everytime new object is requested just create a new object with the initial values.
-
-interface Prototype {  
-  
-     public Prototype getClone();  
-      
-}
-
-class EmployeeRecord implements Prototype{  
-      
-   private int id;  
-   private String name, designation;  
-   private double salary;  
-   private String address;
-   public  EmployeeRecord(int id, String name, String designation, double salary, String address) {  
-        this();  
-        this.id = id;  
-        this.name = name;  
-        this.designation = designation;  
-        this.salary = salary;  
-        this.address = address;  
-    }     
-   
-   @Override  
-    public Prototype getClone() {  
-          
-        return new EmployeeRecord(id,name,designation,salary,address);  
-    }  
 	
-}
+	A Prototype is a template of any object before the actual object is constructed.
+	
+	Prototype design pattern is used in scenarios where application needs to create a number of instances of a class, 
+		which has almost same state or differs very little.
+	
+	Prototype Pattern says that cloning of an existing object instead of creating new one and can also be customized as per the requirement.
+	
+	In this design pattern, an instance of actual object (i.e. prototype) is created on starting, 
+		and thereafter whenever a new instance is required, this prototype is cloned to have another instance. 
+		
+	The main advantage of this pattern is to have minimal instance creation process which is much costly than cloning process.
+	This pattern should be followed, if the cost of creating a new object is expensive and resource intensive.
+
+	Object cloning:
+	--------------
+		The initial values are setup and everytime new object is requested just create a new object with the initial values.
+
+		interface PrototypeCapable extends Cloneable {  
+		  
+			 public PrototypeCapable clone() throws CloneNotSupportedException;;  
+			  
+		}
+
+		public class Movie implements PrototypeCapable
+		{
+			private String name = null;
+			public String getName() {
+				return name;
+			}
+			public void setName(String name) {
+				this.name = name;
+			}
+			@Override
+			public Movie clone() throws CloneNotSupportedException {
+				System.out.println("Cloning Movie object..");
+				return (Movie) super.clone();
+			}
+			@Override
+			public String toString() {
+				return "Movie";
+			}
+		}
+		 
+		public class Album implements PrototypeCapable
+		{
+			private String name = null;
+			public String getName() {
+				return name;
+			}
+			public void setName(String name) {
+				this.name = name;
+			}
+			@Override
+			public Album clone() throws CloneNotSupportedException {
+				System.out.println("Cloning Album object..");
+				return (Album) super.clone();
+			}
+			@Override
+			public String toString() {
+				return "Album";
+			}
+		}
+		 
+		public class Show implements PrototypeCapable
+		{
+			private String name = null;
+			public String getName() {
+				return name;
+			}
+			public void setName(String name) {
+				this.name = name;
+			}
+			@Override
+			public Show clone() throws CloneNotSupportedException {
+				System.out.println("Cloning Show object..");
+				return (Show) super.clone();
+			}
+			@Override
+			public String toString() {
+				return "Show";
+			}
+		}
+		
+		public class PrototypeFactory
+		{
+			public static class ModelType
+			{
+				public static final String MOVIE = "movie";
+				public static final String ALBUM = "album";
+				public static final String SHOW = "show";
+			}
+			private static java.util.Map<String , PrototypeCapable> prototypes = new java.util.HashMap<String , PrototypeCapable>();
+		 
+			static
+			{
+				prototypes.put(ModelType.MOVIE, new Movie());
+				prototypes.put(ModelType.ALBUM, new Album());
+				prototypes.put(ModelType.SHOW, new Show());
+			}
+		 
+			public static PrototypeCapable getInstance(final String s) throws CloneNotSupportedException {
+				return ((PrototypeCapable) prototypes.get(s)).clone();
+			}
+		}
+	
+	Real world usage: POI
+	----------------
+	
+	A possible real world application might be say, when you need to create a spreadsheet containing many cells. 
+	Rather than set the style for each newly created cell to override the default stylings, 
+		you'd use a Prototype pattern to create a template cell, and clone that cell when creating new cells.
+
+	This gives you the added advantage of say, expanding the template cell to create a version for showing dates, 
+		and another for showing numbers, without necessarily having to know the precise details of your template cell. 
+		You'd simply clone the template cell, and perform whatever adjustment you require and use that as a specialized template.
+
+	It essentially allows you to set the details of the style in exactly one place in your program, 
+		and those changes persist with every new cell created without explicitly knowing how it is styled.
 
 //------------------------------------------------------------------------------------------------
 
 Factory Method Pattern
 ----------------------
 
-Define an interface or abstract class for creating an object but let the subclasses decide which class to instantiate.
-Subclasses are responsible to create the instance of the class.
+	Define an interface or abstract class for creating an object but let the subclasses decide which class to instantiate.
+	Subclasses are responsible to create the instance of the class.
 
-The Factory Method Pattern is also known as Virtual Constructor since the actual constructor will be called by the sub-classes.
- 
-Usage of Factory Design Pattern
--------------------------------
-When a class doesn't know what sub-classes will be required to create
-When a class wants that its sub-classes specify the objects to be created.
-When the parent classes choose the creation of objects to its sub-classes.
- 
-abstract class Plan
-{  
-         protected double rate;  
-         abstract void getRate();  
-   
-         public void calculateBill(int units){  
-              System.out.println(units*rate);  
-          }  
-}//end of Plan class.  
+	The Factory Method Pattern is also known as Virtual Constructor since the actual constructor will be called by the sub-classes.
+	 
+	Usage of Factory Design Pattern
+	-------------------------------
+	When a class doesn't know what sub-classes will be required to create
+	When a class wants that its sub-classes specify the objects to be created.
+	When the parent classes choose the creation of objects to its sub-classes.
+	 
+	abstract class Plan
+	{  
+			 protected double rate;  
+			 abstract void getRate();  
+	   
+			 public void calculateBill(int units){  
+				  System.out.println(units*rate);  
+			  }  
+	}//end of Plan class.  
 
-class PlanFactory
-{      
-   //use getPlan method to get object of type Plan   
-       public static Plan getPlan(String planType){  
-            if(planType == null){  
-             return null;  
-            }  
-          if(planType.equalsIgnoreCase("DOMESTICPLAN")) {  
-                 return new DomesticPlan();  
-               }   
-           else if(planType.equalsIgnoreCase("COMMERCIALPLAN")){  
-                return new CommercialPlan();  
-            }   
-          else if(planType.equalsIgnoreCase("INSTITUTIONALPLAN")) {  
-                return new InstitutionalPlan();  
-          }  
-      return null;  
-   }  
-} 
+	class PlanFactory
+	{      
+	   //use getPlan method to get object of type Plan   
+		   public static Plan getPlan(String planType){  
+				if(planType == null){  
+				 return null;  
+				}  
+			  if(planType.equalsIgnoreCase("DOMESTICPLAN")) {  
+					 return new DomesticPlan();  
+				   }   
+			   else if(planType.equalsIgnoreCase("COMMERCIALPLAN")){  
+					return new CommercialPlan();  
+				}   
+			  else if(planType.equalsIgnoreCase("INSTITUTIONALPLAN")) {  
+					return new InstitutionalPlan();  
+			  }  
+		  return null;  
+	   }  
+	} 
 
 Abstract Factory(Kit)
 ----------------
-
-define an interface or abstract class for creating families of related (or dependent) objects but without specifying their concrete sub-classes
-
-Abstract Factory lets a class returns a factory of classes, so that's why it is one level higher than the Factory Pattern.
-
-Advantages
-----------
-Abstract Factory Pattern isolates the client code from concrete (implementation) classes.
-It eases the exchanging of object families.
-It promotes consistency among objects.
-
-ex: Bank and Loan are interfaces
-	BankFactory and Loan Factory are factory classes
-	SBIBank, ICICIBank, HDFCBank 			implements Bank
-	EducationLoan, PersonalLoan, HomeLoan 	implements Loan
 	
-	class FactoryCreator {  
-		public static AbstractFactory getFactory(String choice){  
-		if(choice.equalsIgnoreCase("Bank")){  
-		 return new BankFactory();  
-		} else if(choice.equalsIgnoreCase("Loan")){  
-		 return new LoanFactory();  
-		}  
-		return null;  
-		}  
-	}
- 
-	AbstractFactory bankFactory = FactoryCreator.getFactory("Bank");  
-	Bank b = bankFactory.getBank(bankName);  
+	Abstract factory pattern is used whenever we need another level of abstraction over a group of factories created using factory pattern.
 	
-	AbstractFactory loanFactory = FactoryCreator.getFactory("Loan");
-	Loan l = loanFactory.getLoan(loanName);
+	Define an interface or abstract class for creating families of related (or dependent) objects but without specifying their concrete sub-classes
+
+	Abstract Factory lets a class returns a factory of classes, so that's why it is one level higher than the Factory Pattern.
+
+	Advantages
+	----------
+		1. Abstract Factory Pattern isolates the client code from concrete (implementation) classes.
+		2. It eases the exchanging of object families.
+		3. It promotes consistency among objects.
+
+	ex: Bank and Loan are interfaces
+		BankFactory and Loan Factory are factory classes
+		SBIBank, ICICIBank, HDFCBank 			implements Bank
+		EducationLoan, PersonalLoan, HomeLoan 	implements Loan
+		
+		class FactoryCreator {  
+			public static AbstractFactory getFactory(String choice){  
+				if(choice.equalsIgnoreCase("Bank")){  
+				 return new BankFactory();  
+				} else if(choice.equalsIgnoreCase("Loan")){  
+				 return new LoanFactory();  
+				}  
+				return null;  
+			}  
+		}
+	 
+		AbstractFactory bankFactory = FactoryCreator.getFactory("Bank");  
+		Bank b = bankFactory.getBank(bankName);  
+		
+		AbstractFactory loanFactory = FactoryCreator.getFactory("Loan");
+		Loan l = loanFactory.getLoan(loanName);
 	
 //-------------------------------------------------------------------------------------------
 
 Builder pattern
 ---------------
-construct a complex object from simple objects using step-by-step approach
-It is mostly used when object can't be created in single step like in the de-serialization of a complex object.
-ex: StringBuilder
 
-// Builder
-class FruitBuilder {
-    String name, color, firmness;
-    FruitBuilder setName(name)         { this.name     = name;     return this; }
-    FruitBuilder setColor(color)       { this.color    = color;    return this; }
-    FruitBuilder setFirmness(firmness) { this.firmness = firmness; return this; }
-    Fruit build() {
-        return new Fruit(this); // Pass in the builder
-    }
-}
-
-// Usage
-Fruit fruit = new FruitBuilder()
-        .setName("apple")
-        .setColor("red")
-        .setFirmness("crunchy")
-        .build();
-
-Disadvantages:
---------------
-Requires creating a separate ConcreteBuilder for each different type of product.
-Requires the builder classes to be mutable.
-Data members of class aren't guaranteed to be initialized.
-Dependency injection may be less supported.
+	Builder pattern aims to “Separate the construction of a complex object from its representation 
+		so that the same construction process can create different representations.”
 		
+		which means we can create different objects using same process.
+		
+	Construct a complex object from simple objects using step-by-step approach
+	It is mostly used when object can't be created in single step like in the de-serialization of a complex object.
+	ex: StringBuilder
+	
+	Builder pattern helps us in creating immutable classes with large set of state attributes.
+	
+	User object has following 5 attributes i.e. firstName, lastName, age, phone and address.
+	
+	If you want to make a immutable User class, then you must pass all five information as parameters to constructor. 
+	It will look like this:
+
+	public User (String firstName, String lastName, int age, String phone, String address){
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.age = age;
+		this.phone = phone;
+		this.address = address;
+	}
+	
+	Very good. Now what if only firstName and lastName are mandatory and rest 3 fields are optional. 
+	Problem !! We need more constructors.
+
+	public User (String firstName, String lastName, int age, String phone){ ... }
+	public User (String firstName, String lastName, String phone, String address){ ...  }
+	public User (String firstName, String lastName, int age){ ...   }
+	public User (String firstName, String lastName){ ...    }
+	
+	One way it to create more constructors, and another is to loose the immutability and introduce setter methods. 
+	You choose any of both options, you loose something, right?
+
+	Here, builder pattern will help you to consume additional attributes while retaining the immutability of User class.
+	
+	-----------------------------------------------------
+
+	// Builder
+	class FruitBuilder {
+		String name, color, firmness, season;
+		double cost;
+		
+		//Place only mandatory fields in constructor
+		FruitBuilder(String name, double cost) {
+			this.name= name;
+			this.cost= cost;
+		}
+		
+		FruitBuilder setName(name)         { this.name     = name;     return this; }
+		FruitBuilder setColor(color)       { this.color    = color;    return this; }
+		FruitBuilder setFirmness(firmness) { this.firmness = firmness; return this; }
+		FruitBuilder setSeason(season) { this.season = season; return this; }
+		FruitBuilder setCost(cost) { this.cost = cost; return this; }
+		
+		Fruit build() {
+			return new Fruit(this); // Pass in the builder
+		}
+	}
+
+	// Usage
+	Fruit fruit = new FruitBuilder("apple", 20.00)
+					.setSeason("summer")
+					.setColor("red")
+					.setFirmness("crunchy")
+					.build();
+
+	Disadvantages:
+	--------------
+		1. Requires creating a separate ConcreteBuilder for each different type of product.
+		2. Requires the builder classes to be mutable.
+		3. Data members of class aren't guaranteed to be initialized.
+		4. Dependency injection may be less supported.
+			
 //-------------------------------------------------------------------------------------------
 
 Builder VS Factory
 ------------------
-A factory is simply a wrapper function around a constructor (possibly one in a different class). The key difference is that a factory method pattern requires the entire object to be built in a single method call, with all the parameters pass in on a single line. The final object will be returned.
 
-A builder pattern, on the other hand, is in essence a wrapper object around all the possible parameters you might want to pass into a constructor invocation.
-This allows you to use setter methods to slowly build up your parameter list. 
-One additional method on a builder class is a build() method, which simply passes the builder object into the desired constructor, and returns the result.
+	A factory is simply a wrapper function around a constructor (possibly one in a different class). 
+	The key difference is that a factory method pattern requires the entire object to be built in a single method call, 
+		with all the parameters pass in on a single line. The final object will be returned.
 
-In static languages like Java, this becomes more important when you have more than a handful of (potentially optional) parameters, as it avoids the requirement to have telescopic constructors for all the possible combinations of parameters. 
-Also a builder allows you to use setter methods to define read-only or private fields that cannot be directly modified after the constructor has been called.
+	A builder pattern, on the other hand, is in essence a wrapper object around all the possible parameters 
+		you might want to pass into a constructor invocation.
+	This allows you to use setter methods to slowly build up your parameter list. 
+	One additional method on a builder class is a build() method, which simply passes the builder object 
+		into the desired constructor, and returns the result.
+
+	In static languages like Java, this becomes more important when you have more than a handful of (potentially optional) parameters, 
+		as it avoids the requirement to have telescopic constructors for all the possible combinations of parameters. 
+	Also a builder allows you to use setter methods to define read-only or private fields that cannot be directly 
+		modified after the constructor has been called.
 
 --------------------------------------------------------------
 
-The Factory pattern can almost be seen as a simplified version of the Builder pattern.
-In the Factory pattern, the factory is in charge of creating various subtypes of an object depending on the needs.
-The user of a factory method doesn't need to know the exact subtype of that object. 
-An example of a factory method createCar might return a Ford or a Honda typed object.
+	The Factory pattern can almost be seen as a simplified version of the Builder pattern.
+	In the Factory pattern, the factory is in charge of creating various subtypes of an object depending on the needs.
+	The user of a factory method doesn't need to know the exact subtype of that object. 
+	An example of a factory method createCar might return a Ford or a Honda typed object.
 
-In the Builder pattern, different subtypes are also created by a builder method, but the composition of the objects might differ within the same subclass.
-To continue the car example you might have a createCar builder method which creates a 
-Honda-typed object with a 4 cylinder engine, or a Honda-typed object with 6 cylinders. 
-The builder pattern allows for this finer granularity.
+	In the Builder pattern, different subtypes are also created by a builder method, 
+		but the composition of the objects might differ within the same subclass.
+	To continue the car example you might have a createCar builder method which creates a 
+	Honda-typed object with a 4 cylinder engine, or a Honda-typed object with 6 cylinders. 
+	The builder pattern allows for this finer granularity.
 
 ---------------------------------------------------------------------------
 
 Another difference is if we want to add another object into Factory, we need to modify the factory method- violates open close principle 
 (close for modification and open for extension). 
+
 Whereas, if want to add another car builder we can just create another builder and no change in 
 	director class as director constructor accept all builders– Extensible.
 
@@ -253,208 +411,345 @@ Structural Design Patterns
 Adapter Pattern(Wrapper)
 ---------------------------
 
-An Adapter Pattern says that just "convert the interface of a class into another interface that a client wants".
+	An Adapter Pattern says that just "Convert the interface of a class into another interface that a client wants
+		Adapter lets classes work together that couldn’t otherwise because of incompatible interfaces.”
+	
+	In other words, to provide the interface according to client requirement while using the services of a class with a different interface.
+	
+	An adapter pattern is also known as Wrapper pattern as well.
 
-In other words, to provide the interface according to client requirement while using the services of a class with a different interface.
+	There are the following specifications for the adapter pattern:
 
-There are the following specifications for the adapter pattern:
+		1. Target Interface: This is the desired interface class which will be used by the clients.
+		2. Adapter class: This class is a wrapper class which implements the desired target interface and 
+							modifies the specific request available from the Adaptee class.
+		3. Adaptee class: This is the class which is used by the Adapter class to reuse the existing functionality and modify them for desired use.
+		4. Client: This class will interact with the Adapter class.
 
-Target Interface: This is the desired interface class which will be used by the clients.
-Adapter class: This class is a wrapper class which implements the desired target interface and modifies the specific request available from the Adaptee class.
-Adaptee class: This is the class which is used by the Adapter class to reuse the existing functionality and modify them for desired use.
-Client: This class will interact with the Adapter class.
+	Ex: If we want the details of bank account in some format using credit card number, we can do the following
 
-Ex: If we want the details of bank account in some format using credit card number, we can do the following
+	Adaptee class = AccountDetails
+	Adapter class = BankCustomer 
+	Target interface = CreditCard
 
-Adaptee class = AccountDetails
-Adapter class = BankCustomer 
-Target interface = CreditCard
+	BankCustomer extends AccountDetails implements CreditCard
+		Provides custom functionality by implementing few methods required for CreditCard related interface using the methods of AccountDetails.
+		
+	Usage:
+	-----
+		Adapter Design is very useful for the system integration when some other existing components have to be 
+			adapted by the existing system without sourcecode modifications.
+			
+	Example:
+	
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		System.out.print("Enter String");
+		String s = br.readLine();
+		System.out.print("Enter input: " + s);
+		
+		Explanation:
+		-----------
+		System.in - This input stream reads the data from console in bytes stream.
+		BufferedReader as java docs define, reads a character stream & buffers characters
+		
+		System.in provides byte stream where as BufferedReader expects character stream.
+		
+		InputStreamReader does exactly this thing and works adapter between System.in and BufferedReader.
+			InputStreamReader converts bytes into characters while BufferedReader can buffer these chars.
 
-BankCustomer extends AccountDetails implements CreditCard
-	Provides custom functionality by implementing few methods required for CreditCard related interface using the methods of AccountDetails.
-
-//-------------------------------------------------
+//-------------------------------------------------------------
 
 Decorator
 ---------
 
-Attach a flexible additional responsibilities to an object dynamically.
-The Decorator Pattern uses composition instead of inheritance to extend the functionality of an object at runtime.
+	Attach flexible additional features or behaviors to an object dynamically.
+	The Decorator Pattern uses composition instead of inheritance to extend the functionality of an object at runtime.
+	
+	Decorators provide a flexible alternative to sub-classing for extending functionality.
 
-It provides greater flexibility than static inheritance.
-It enhances the extensibility of the object, because changes are made by coding new classes.
-It simplifies the coding by allowing you to develop a series of functionality from targeted classes instead of coding all of the behavior into the object.
+		1. It provides greater flexibility than static inheritance.
+		2. It enhances the extensibility of the object, because changes are made by coding new classes.
+		3. It simplifies the coding by allowing you to develop a series of functionality from targeted 
+			classes instead of coding all of the behavior into the object.
 
-ex: Adding buffering capabilities like reading line by line to Input stream and File input stream
+	ex: Adding buffering capabilities like reading line by line to Input stream and File input stream
 
-BufferedReader br= new BufferedReader(new InputStreamReader(System.in));   
-BufferedReader br= new BufferedReader(new FileInputStreamReader(System.in));
+		BufferedReader br= new BufferedReader(new InputStreamReader(System.in));   
+		BufferedReader br= new BufferedReader(new FileInputStreamReader(System.in));
+	Following are the participants of the Decorator Design pattern:
 
-interface Food {prepareFood();foodPrice();}
-VegFood implements Food
-FoodDecorator implements Food
-NonVegFood(Food food) extends FoodDecorator
-ChineseFood(Food food) extends FoodDecorator 
+		1. Component
+				this is the wrapper which can have additional responsibilities associated with it at runtime.
+		2. Concrete component
+				is the original object to which the additional responsibilities are added in program.
+		3. Decorator
+				this is an abstract class which contains a reference to the component object and also implements the component interface.
+		4. Concrete decorator
+				they extend the decorator and builds additional functionality on top of the Component class.
+			
+	
+	Example: 
+	-------
+	
+		interface Food { prepareFood(); foodPrice(); }
+		
+		PlateRice 		implements Food
+		FoodDecorator 	implements Food
+		
+		VegFood(Food food) 		extends FoodDecorator
+		NonVegFood(Food food) 	extends FoodDecorator
+		ChineseFood(Food food) 	extends FoodDecorator 
 
-VegFood
--------
-prepareFood(){
-	return "Rice and Dal";
-}
+	PlateRice
+	-------
+	prepareFood(){
+		return "Rice";
+	}
 
-public abstract class FoodDecorator implements Food{  
-    private Food newFood;  
-    public FoodDecorator(Food newFood)  {  
-        this.newFood=newFood;  
-    }  
-    @Override  
-    public String prepareFood(){  
-        return newFood.prepareFood();   
-    }  
-    public double foodPrice(){  
-        return newFood.foodPrice();  
-    }  
-}  
+	public abstract class FoodDecorator implements Food {  
+		private Food newFood;  
+		public FoodDecorator(Food newFood) {  
+			this.newFood=newFood;  
+		}  
+		@Override  
+		public String prepareFood(){  
+			return newFood.prepareFood();   
+		}  
+		public double foodPrice(){  
+			return newFood.foodPrice();  
+		}  
+	}  
 
-NonVegFood(VegFood)
--------------------
-prepareFood(){
-	return super.prepareFood()+" with Chicken curry."
-}
+	new VegFood(new PlateRice())
+	--------------------------------
+	prepareFood(){
+		return super.prepareFood()+" with Dal and Curd."
+	}
+	
+	new NonVegFood(new PlateRice())
+	--------------------------------
+	prepareFood(){
+		return super.prepareFood()+" with Chicken curry and Curd."
+	}
 
-ChineseFood(VegFood)
---------------------
-prepareFood(){
-	return super.prepareFood()+" with Fried rice and Manchurian."
-}
+	new ChineseFood(new PlateRice())
+	--------------------------------
+	prepareFood(){
+		return super.prepareFood()+" with Fried rice and Manchurian."
+	}
 
-//--------------------------------------------------------------------------
+--------------------------------------------------------------------------
 
 Proxy Pattern (Surrogate or Placeholder.)
 -------------
-Simply, proxy means an object representing another object.
 
-Provides the control for accessing the original object
-So, we can perform many operations like hiding the information of original object, on demand loading etc.
+	Simply, proxy means an object representing another object.
+	a proxy object provide a surrogate or placeholder for another object to control access to it. 
+	A proxy is basically a substitute for an intended object which we create due to many reasons 
+		e.g. security reasons or cost associated with creating fully initialized original object.
+		
+	Proxy is heavily used to implement lazy loading related usecases where we do not want to create full object until it is actually needed.
 
-1. Remote Proxy scenario---A remote proxy can be thought about the stub in the RPC call. 
-The remote proxy provides a local representation of the object which is present in the different address location. 
-Another example can be providing interface for remote resources such as web service or REST resources.
+	Provides the control for accessing the original object
+	So, we can perform many operations like hiding the information of original object, on demand loading etc.
 
-2. Smart Proxy scenario---A smart proxy provides additional layer of security by interposing specific actions when the object is accessed. 
-For example, to check whether the real object is locked or not before accessing it so that no other objects can change it.
+	1. Remote Proxy scenario
+			A remote proxy can be thought about the stub in the RPC call. 
+			The remote proxy provides a local representation of the object which is present in the different address location. 
+			Another example can be providing interface for remote resources such as web service or REST resources.
 
-3. Protective Proxy scenario---It acts as an authorization layer to verify that whether the actual user has access the appropriate content or not. 
-For example, a proxy server which provides restriction on internet access in office. Only the websites and contents which are valid will be allowed and the remaining ones will be blocked.
+	2. Smart Proxy scenario
+			A smart proxy provides additional layer of security by interposing specific actions when the object is accessed. 
+			For example, to check whether the real object is locked or not before accessing it so that no other objects can change it.
 
-4. Virtual Proxy scenario---Consider a situation where there is multiple database call to extract huge size image. Since this is an expensive operation so here we can use the proxy pattern which would create multiple proxies and point to the huge size memory consuming object for further processing. The real object gets created only when a client first requests/accesses the object and after that we can just refer to the proxy to reuse the object. This avoids duplication of the object and hence saving memory.
+	3. Protective Proxy scenario
+			It acts as an authorization layer to verify that whether the actual user has access the appropriate content or not. 
+			For example, a proxy server which provides restriction on internet access in office. 
+			Only the websites and contents which are valid will be allowed and the remaining ones will be blocked.
 
-ex 1: Spring AOP
+	4. Virtual Proxy scenario
+			Consider a situation where there is multiple database call to extract huge size image. 
+			Since this is an expensive operation so here we can use the proxy pattern which would create multiple proxies and 
+			point to the huge size memory consuming object for further processing. 
+			The real object gets created only when a client first requests/accesses the object and after that we can just 
+			refer to the proxy to reuse the object. This avoids duplication of the object and hence saving memory.
 
-class ProxyAdvice extends RealAdvice {
+	Design participants
+	-------------------
+		1. Subject – is an interface which expose the functionality available to be used by the clients.
+		2. Real Subject – is a class implementing Subject and it is concrete implementation which needs to be hidden behind a proxy.
+		3. Proxy – hides the real object by extending it and clients communicate to real object via this proxy object. 
+					Usually frameworks create this proxy object when client request for real object.
+
+	Real world scenarios
+	--------------------
 	
-	public void performActionWithBeforeAfterAdvice() {
+	ex 1: Spring AOP
+
+	class ProxyAdvice extends RealAdvice {
 		
-		beforeAdvice();	//executed before the actual method invocation
-		
-		super.performAction();
-		
-		afterAdvice(); //executed after the actual method invocation
+		public void performActionWithBeforeAfterAdvice() {
+			
+			beforeAdvice();	//executed before the actual method invocation
+			
+			super.performAction();
+			
+			afterAdvice(); //executed after the actual method invocation
+		}
 	}
-}
-ex 2: 
------
-public class ProxyInternetAccess implements OfficeInternetAccess {  
-	private String employeeName;  
-	private RealInternetAccess  realaccess;  
-	
-	public ProxyInternetAccess(String employeeName) {  
-		this.employeeName = employeeName;  
-	}  
-	@Override  
-	public void grantInternetAccess()   
-	{  
-		if (getRole(employeeName) > 4)   
+	ex 2: 
+	-----
+	public class ProxyInternetAccess implements OfficeInternetAccess {  
+		private String employeeName;  
+		private RealInternetAccess  realaccess;  
+		
+		public ProxyInternetAccess(String employeeName) {  
+			this.employeeName = employeeName;  
+		}  
+		@Override  
+		public void grantInternetAccess()   
 		{  
-			realaccess = new RealInternetAccess(employeeName);  
-			realaccess.grantInternetAccess();  
-		}   
-		else   
-		{  
-			System.out.println("No Internet access granted. Your job level is below 5");  
+			if (getRole(employeeName) > 4)   
+			{  
+				realaccess = new RealInternetAccess(employeeName);  
+				realaccess.grantInternetAccess();  
+			}   
+			else   
+			{  
+				System.out.println("No Internet access granted. Your job level is below 5");  
+			}  
+		}  
+		public int getRole(String emplName) {  
+		// Check role from the database based on Name and designation  
+		// return job level or job designation.  
+			return 9;  
 		}  
 	}  
-	public int getRole(String emplName) {  
-	// Check role from the database based on Name and designation  
-	// return job level or job designation.  
-		return 9;  
-	}  
-}  
+	ex 3:
+	-----
+		In hibernate, we write the code to fetch entities from the database. 
+		Hibernate returns an object which is a proxy (by dynamically constructed by Hibernate by extending the domain class) 
+			to the underlying entity class. The client code is able to read the data whatever it needs to read with the proxy.
+		
+		These proxy entity classes help in implementing lazy loading scenarios where associated entities are fetched only when 
+			they are requested explicitly. It helps in improving performance of DAO operations.
 
 //------------------------------------------------------------------------------------------------
 
 Facade - (front side of a building facing the street)
 ------	think of it like a front side which is like one unit and inside it contains many floors which represent calls to different methods
-Just provide a unified and simplified interface to a set of interfaces in a subsystem, 
-therefore it hides the complexities of the subsystem from the client
 
-Facade Pattern describes a higher-level interface that makes the sub-system easier to use.
+	Just provide a unified and simplified interface to a set of interfaces in a subsystem, 
+		therefore it hides the complexities of the subsystem from the client
 
-Every Abstract Factory is a type of Facade
+	Facade Pattern describes a higher-level interface that makes the sub-system easier to use.
 
-Client -> call one method on facade -> call_1()
-									-> call_2()
-									-> call_3()
-									-> ...
-Advantages
-----------
-It shields the clients from the complexities of the sub-system components.
-It promotes loose coupling between subsystems and its clients.
-
-ex: MobileShop interface
-	Iphone, Samsung, Blackberry implements MobileShop
-	ShopKeeper concrete class that will use MobileShop interface.
+	Every Abstract Factory is a type of Facade.
 	
-	public class ShopKeeper {  
-		private MobileShop iphone;  
-		private MobileShop samsung;  
-		private MobileShop blackberry;  
-		  
-		public ShopKeeper(){  
-			iphone= new Iphone();  
-			samsung=new Samsung();  
-			blackberry=new Blackberry();  
-		}  
-		public void iphoneSale(){  
-			iphone.modelNo();  
-			iphone.price();  
-		}  
-			public void samsungSale(){  
-			samsung.modelNo();  
-			samsung.price();  
-		}  
-		public void blackberrySale(){  
-			blackberry.modelNo();  
-			blackberry.price();  
-		}  
-	}  
+	When to use ?
+	------------
+	The facade pattern is appropriate when we have a complex system that we want to expose to clients in a simplified way. 
+	Its purpose is to hide internal complexity behind a single interface that appears simple from the outside.
 
-	Client will use the ShopKeeper class to get the underlying details of each.
+	Client -> call one method on facade -> call_1()
+										-> call_2()
+										-> call_3()
+										-> ...
+	
+	Real world scenarios
+	--------------------
+		1. dataSource.getConnection() to get the connection but internally a lot of things happen such as loading the driver, 
+			creating connection or fetching connection from pool, update stats and then return the connection reference to caller method.
+		
+		2. When we have to start a computer, all we have to do is press the start button. 
+			We really do not care what all things go inside the computer hardware and software.
+		
+	Advantages
+	----------
+	It shields the clients from the complexities of the sub-system components.
+	It promotes loose coupling between subsystems and its clients.
+
+	ex: MobileShop interface
+		Iphone, Samsung, Blackberry implements MobileShop
+		ShopKeeper concrete class that will use MobileShop interface.
+		
+		public class ShopKeeper {  
+			private MobileShop iphone;  
+			private MobileShop samsung;  
+			private MobileShop blackberry;  
+			  
+			public ShopKeeper(){  
+				iphone= new Iphone();  
+				samsung= new Samsung();  
+				blackberry= new Blackberry();  
+			}  
+			public void iphoneSale(){  
+				s.o.p(iphone.modelNo());  
+				s.o.p(iphone.price());  
+			}  
+			
+			public void samsungSale(){  
+				s.o.p(samsung.modelNo());  
+				s.o.p(samsung.price());  
+			}  
+			
+			public void blackberrySale(){  
+				s.o.p(blackberry.modelNo());  
+				s.o.p(blackberry.price());  
+			}  
+		}  
+
+		Client will use the ShopKeeper class to get the underlying details of each.
 	
 ---------------------------------------------------------------------------------
 
 Flyweight
 ---------
 
-"to reuse already existing similar kind of objects by storing them and create new object when no matching object is found".
+	"To reuse already existing similar kind of objects by storing them and create new object when no matching object is found".
 
-Advantage of Flyweight Pattern
-It reduces the number of objects.
-It reduces the amount of memory and storage devices required if the objects are persisted
+	We can use flyweight pattern in following scenarios:
+
+		When we need a large number of similar objects that are unique in terms of only a few parameters and most of the stuffs are common in general.
+		We need to control the memory consumption by large number of objects – by creating fewer objects and sharing them across.
 	
-//-----------------------------------------------------------------------------------------------------------
+	Advantage of Flyweight Pattern
+	
+		1. It reduces the number of objects.
+		2. It reduces the amount of memory and storage devices required if the objects are persisted
+		
+	A flyweight objects essentially has two kind of attributes – intrinsic and extrinsic.
 
+		1. An intrinsic state attribute is stored/shared in the flyweight object, and it is independent of flyweight’s context. 
+			As the best practice, we should make intrinsic states immutable.
 
+		2. An extrinsic state varies with flyweight’s context, which is why they cannot be shared. 
+			Client objects maintain the extrinsic state, and they need to pass this to a flyweight object during object creation.
+	
+	Real world scenarios:
+	---------------------
+		1. In programming, we can see java.lang.String constants as flyweight objects. 
+			All strings are stored in string pool and if we need a string with certain content then runtime 
+			return the reference to already existing string constant from the pool – if available.
+		
+		2. In browsers, we can use an image in multiple places in a webpage. Browsers will load the image only one time, 
+			and for other times browsers will reuse the image from cache. Now image is same but used in multiple places. 
+			It’s URL is intrinsic attribute because it’s fixed and shareable. 
+			Images position coordinates, height and width are extrinsic attributes which vary according to place (context) 
+				where they have to be rendered.
+	
+	
+-----------------------------------------------------------------------------------------------------------
+
+Bridge
+------
+	
+	"Decouple an abstraction from its implementation so that the two can vary independently."
+	
+	Bridge design pattern is used to decouple a class into two parts – abstraction and it’s implementation – 
+		so that both can evolve in future without affecting each other. 
+	
+	It increases the loose coupling between class abstraction and it’s implementation.
 
 
 
