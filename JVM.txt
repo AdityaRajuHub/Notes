@@ -162,7 +162,65 @@ Observations:
 						But that is not a neat solution as it creates confusion to the client using it.
 						The solution is Immutable objects.
 
---------------------------------------------------------
+5. As we know by now that all objects are created on the Heap and all primitve variables 
+	and references to objects are created on the Stack.
+
+	For String objects that are created on a special location in heap called String pool, 
+	if two strings are initialized with the same value then both refer to only one object.
+	This is called Internalized Strings.
+
+	ex: String a = new String("someString");
+		String b = new String("someString");
+		
+		a == b will be true
+
+	The only exception in this case is when we have some string being calculated will be a different object.
+	ex: String a = new Integer(76).toString();
+		String b = new String("76");
+		
+		a == b will be false
+		
+	Note: In Java6, the Internalized string are placed in Perm Gen space apart from meta data.
+
+-----------------------------------------------------------------------------------------------------------
+
+	
+Memory Leaks
+------------
+
+In C and C++ we need to explicitly free the memory used by the program when creating objects like struct using
+malloc and calloc. This freeing of memory is done to avoid memory leaks caused by the program.
+
+A memory leak is nothing but memory that is used by the program but never freed so that part of memory
+is going to be occupied by unused objects even after program termination. 
+This can cause memory to be filled up and inturn system would become slow and finally may crash.
+
+Java avoids memory leaks by
+
+1. Running on a JVM
+		JVM is a special program in C run in OS and memory allocation and deallocation is done by JVM.
+		So we don't directly interact with OS, hence JVM is in control.
+
+2. Adopts a Garbage collection strategy 
+	
+To avoid this Java has comeup with automatic freeing of memory through Grabage collection program.
+
+Garbage collection works by checking for live objects meaning that which are reachable
+and discarding those objects which are unreachable not unreferenced since there can
+be objects which are being referenced by some other object which is unreferenced.
+
+ex: 	Stack				Heap
+		-------------------------------
+		val -> a			a -> b -> c
+		
+		If val is popped from stack then a is unreachable but b and c are still referenced by a
+		but they are also unreachable.
+		
+		There can be cyclic referencing also meaning a -> b -> c -> a but they are all unreachable.	
+
+Garbage collection runs randomly and whenever it runs it calls the Object.finalize() method.
+
+***Note: When a GC runs all the thread are paused and only GC runs.
 
 Heap space is again divided into 
 1. Young generation space
@@ -180,15 +238,112 @@ Finally it moves to Old generation where it is most likely to be used in the fut
 Memory specifications:
 ----------------------
 
-Heap: 		-Xmx -Xms
+Heap: 		-Xmx -Xms	
 PermGen:	-XX:PermSize -XX:MaxPermSize
 Stack: 		-Xss
 
+***Note: 
 
-Garbage collection strategy
+1. Initial request will be for smallest memory specified say 20MB -Xms20m until max memory -Xmx512m
+
+2. When we allocate say 20MB, then this memory is divided among the different spaces.
+	Old generation 	-> 	10.50 MB
+	Eden space		-> 	5.50 MB
+	S0				-> 	2.00 MB
+	S1				-> 	2.00 MB
+	
+3. PermGen space is part of Heap but it is never GC'ed hence the name Permanent Generation.
+	So all old metadata resides and new copy of all meta data is loaded into PermGen.
+
+4. From Java 8, PermGen is replaced by Metaspace where it is separate from Heap and allocated in OS.
+	So the max memory is the available system memory.
+
+Garbage collection strategy (Mark & Sweep)
 ---------------------------
-1. Marking
-2. Deletion
-3. Deletion + Compacting
+1. Marking	
+		Mark those objects which are live by checking their references from Stack.
+		So the more the garbage there is, the faster the GC runs.
 
------------------------------------------------------------------------------------------------------------
+2. Deletion
+		Delete those objects which are not marked
+
+3. Deletion + Compacting
+		Compacting means moving all the surviving objects into a contiguous location of memory
+		to avoid fragmentation. (Survivor spaces are used for this reason.)
+
+
+The objects that survive the Eden space gets moved to either S0 or S1.
+say initially if all objects are moved to contiguos memory location in S0 
+and then GC runs again then this time all objects are compacted 
+and objects from Eden and S0 are moved to S1
+later when GC runs again all objects that survive + objects from S1 are moved to S0.
+
+This cycle happens for sometime say 8 cycles until JVM decides objects to be moved to 
+Old generation.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

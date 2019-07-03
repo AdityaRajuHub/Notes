@@ -132,7 +132,8 @@ The option, delay=5000 ❸ indicates that files should be polled at a 5-second i
 
 An endpoint acts as a factory which produces Producer and Consumer which interact by sending/receiving messages to/from an endpoint.
 
-			creates				creates
+			
+				creates
 Component --------> Endpoint ----------> Consumer calls Processors
 						|	|----------> Producer	
 						|	
@@ -607,11 +608,9 @@ Integration with Spring
 		
 2. To start JMS component in Spring
 
-	ConnectionFactory connectionFactory =
-	new ActiveMQConnectionFactory("vm://localhost");
+	ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://localhost");
 	CamelContext context = new DefaultCamelContext();
 	context.addComponent("jms", JmsComponent.jmsComponentAutoAcknowledge(connectionFactory));
-
 
 	<bean id="jms" class="org.apache.camel.component.jms.JmsComponent">
 		<property name="connectionFactory">
@@ -688,21 +687,595 @@ Integration with Spring
 			<routeContextRef ref="ftpToJms"/>
 		</camelContext>
 		
+
+Dynamic URI's
+-------------
+
+We can use toD method to build dynamic URI's
+
+	toD("jms:queue:${header.myDest}")		-> picks up at runtime the destination from the header property
+												which can be set by preceding processors
+	<toD uri="jms:queue:${header.myDest}"/>
+	
+USING PROPERTY PLACEHOLDERS
+---------------------------
+
+Values will be replaced when Camel starts up, not on every new message, as in the case of toD.
+
+A common use case is testing. A Camel route is often tested in different environments.
+You don’t want to rewrite tests every time you move to a new environment.
+That’s why you externalize dynamic parts rather than hardcoding them.
+
+
+To ensure that the property placeholder is loaded and in use as early as
+possible, you have to configure PropertiesComponent when CamelContext is
+created:
+
+	CamelContext context = new DefaultCamelContext();
+	PropertiesComponent prop = camelContext.getComponent("properties", PropertiesComponent.class);
+	prop.setLocation("classpath:rider-test.properties");
+	
+In the rider-test.properties file, you define the externalized properties as keyvalue pairs:
+
+	myDest=incomingOrders
+
+RouteBuilders can then take advantage of the externalized properties directly
+in the endpoint URI, as shown in bold in this route:
+
+	return new RouteBuilder() {
+		@Override
+		public void configure() throws Exception {
+			from("file:src/data?noop=true")
+			.to("jms:{{myDest}}");
+
+			from("jms:incomingOrders")
+			.to("mock:incomingOrders");
+		}
+	};
+	
+Using Spring property placeholder ${key} instead of {{key}}
+---------------------------------
+	
+	<context:property-placeholder properties-ref="properties"/>
+	<util:properties id="properties" location="classpath:rider-test.properties"/>
+	<camelContext xmlns="http://camel.apache.org/schema/spring">
+		<endpoint id="myDest" uri="jms:${myDest}"/>
+		<route>
+			<from uri="file:src/data?noop=true"/>
+			<to uri="jms:${myDest}"/>	-> Not supported
+			<to ref="myDest"/>			-> Supported
+		</route>
+		<route>
+			<from uri="jms:incomingOrders"/>
+			<to uri="mock:incomingOrders"/>
+		</route>
+	</camelContext>
+		
+Unfortunately, the Spring Framework doesn’t support using placeholders
+directly in endpoint URIs in the route, so you must define endpoints that
+include those placeholders by using the <endpoint> tag.
+		
+REFERENCING REGISTRY BEANS IN ENDPOINT URIS 	-> Use a #beanName inside the uri
+----------------------------------------------
+
+Fetch only CSV order files from the FTP site
+
+	public class OrderFileFilter<T> implements GenericFileFilter<T> {
+		public boolean accept(GenericFile<T> file) {
+			return file.getFileName().endsWith("csv");
+		}
+	}
+		
+	registry.bind("myFilter", new OrderFileFilter<Object>());
+
+Then you use the # syntax to refer to the named instance in the registry:
+
+	from("ftp://rider.com/orders?username=rider&password=secret&filter=#myFilter")
+		
+
+--------------------------------------------------------------------------------------------
+
+Routing and EIPs
+-----------------
+
+USING A CONTENT-BASED ROUTER
+----------------------------
+
+As the name suggests, Camel routes from source to dest based on its content.
+
+Content can be
+
+1. Message header
+2. Payload data type
+3. Payload content or anything in the message exchange
+
+ex: 	if filename extension is .xml
+			send to XMLOrders Queue
+		else 
+			send to CSVOrders Queue
+			
+	The choice method creates a CBR processor, and conditions are added by following 
+	choice with a combination of a when method and a predicate.
 		
 		
+	from("jms:incomingOrders")
+	.choice()
+	.when(predicate)
+	.to("jms:xmlOrders")
+	.when(predicate)
+	.to("jms:csvOrders");
 		
 		
+A predicate in Camel is a simple interface that has only a matches method:
+
+	public interface Predicate {
+		boolean matches(Exchange exchange);
+	}		
+
+Predicates are often built up from expressions, and expressions are used to extract a result 
+	from an exchange based on the expression content. 
+You can choose from many expression languages in Camel, some of which include 
+	Simple, SpEL, JXPath, MVEL, OGNL, JavaScript, Groovy, XPath, and XQuery.
+
+Within RouteBuilder, you can start by using the header method, which
+	returns an expression that will evaluate to the header value.
+
+	header("CamelFileName").endsWith(".xml")
+	
+	header maps to the headers of the in message of the exchange.
+
+The complete DSL looks like 
+------------------------------
+
+	from("file:src/data?noop=true").to("jms:incomingOrders");
+	from("jms:incomingOrders") 
+	//Content-based router
+	.choice() 
+	.when(header("CamelFileName").endsWith(".xml")) 
+	.to("jms:xmlOrders") 
+	.when(header("CamelFileName").endsWith(".csv")) 
+	.to("jms:csvOrders"); 
+	
+	from("jms:xmlOrders")
+	//Test routes that print message content
+	.log("Received XML order: ${header.CamelFileName}") 
+	.to("mock:xml"); 
+	
+	from("jms:csvOrders") 
+	.log("Received CSV order: ${header.CamelFileName}") 
+	.to("mock:csv"); 
+	
+The Simple language
+-------------------
+
+Camel’s own expression language included with the camel-core module
+
+${} placeholders
+
+ex: ${header.CamelFileName}
+
+	from("jms:incomingOrders")
+	.choice()
+	.when(simple("${header.CamelFileName} ends with 'xml'"))
+	.to("jms:xmlOrders")
+	.when(simple("${header.CamelFileName} ends with 'csv'"))
+	.to("jms:csvOrders");
+
+ends with is an operator
+
+
+otherwise clause
+----------------
+
+	from("jms:incomingOrders")
+	.choice()
+	.when(header("CamelFileName").endsWith(".xml"))
+	.to("jms:xmlOrders")
+	.when(header("CamelFileName").regex("^.*(csv|csl)$"))
+	.to("jms:csvOrders")
+	.otherwise()
+	.to("jms:badOrders");
+
+
+
+Continue routing after a CBR ->	using end()
+----------------------------
+
+	from("jms:incomingOrders")
+	.choice()
+	.when(header("CamelFileName").endsWith(".xml"))
+	.to("jms:xmlOrders")
+	.when(header("CamelFileName").regex("^.*(csv|csl)$"))
+	.to("jms:csvOrders")
+	.otherwise()
+	.to("jms:badOrders")
+	.end()
+	.to("jms:continuedProcessing");
+
+Halt the route in CBR -> stop()
+---------------------
+	from("jms:incomingOrders")
+	.choice()
+	.when(header("CamelFileName").endsWith(".xml"))
+	.to("jms:xmlOrders")
+	.when(header("CamelFileName").regex("^.*(csv|csl)$"))
+	.to("jms:csvOrders")
+	.otherwise()
+	.to("jms:badOrders").stop()
+	.end()
+	.to("jms:continuedProcessing");
+
+	Any orders entering into the otherwise block will be sent only to the
+		badOrders queue—not to the continuedProcessing queue.
+
+Filtering based on Payload Content -> use XPath
+----------------------------------
+
+Filter out all the test orders from the real order arriving in the same queue
+The test orders have an additional test attribute set in the order element.
+
+XML payload
+------------
+
+	<?xml version="1.0" encoding="UTF-8"?>
+	<order name="motor" amount="1" customer="foo" test="true"/>
+
+	from("jms:xmlOrders")
+	.filter(xpath("/order[not(@test)]"))
+	.log("Received XML order: ${header.CamelFileName}")
+	.to("mock:xml");
+
+	The expression will evaluate to true for orders that don’t have the test attribute.
+
+	XPath expressions are useful for creating conditions based on XML payloads.
+
+Multicasting (sending to mutiple destinations)
+----------------------------------------
+
+	from("jms:xmlOrders")
+	.multicast()
+	.to("jms:accounting", "jms:production");
+
+	By default, the multicast sends message copies sequentially. 
+	In the preceding example, a message is sent to the accounting queue and then to the
+	production queue means only a single thread is involved. 
+	
+	But what if you want to send them in parallel?
+
+
+PARALLEL MULTICASTING
+---------------------
+
+This sets up the multicast to distribute messages to the destinations in parallel. 
+Under the hood, a thread pool is used to manage threads.
+
+	from("jms:xmlOrders")
+	.multicast().parallelProcessing()
+	.to("jms:accounting", "jms:production");
+
+
+What if we want to issue orders to Accounting and Production simultaneously only for some?
+-----------------------------------------------------------------------------------------
+
+Camel provides a recipientList method for implementing the Recipient List EIP.
+
+For example, the following route takes the list of recipients from a
+	header named recipients, where each recipient is separated from the next by a comma:
+
+	from("jms:xmlOrders").recipientList(header("recipients"));
+
+This is useful if you already have some information in the message that can
+	be used to construct the destination names—you could use an expression to create the list.
+	
+In order for the recipient list to extract meaningful endpoint URIs, the expression result must be iterable
+
+	Ex: java.util.Collection, java.util.Iterator, java.util.Iterable, Java arrays,
+		org.w3c.dom.NodeList, and a String with comma-separated values.
+
+Other simple solution could be to call out to a custom Java bean to do this:
+
+	from("jms:xmlOrders")
+	.setHeader("recipients", method(RecipientsBean.class, "recipients"))
+	.recipientList(header("recipients"));
+
+	public class RecipientsBean {
+		public String[] recipients(@XPath("/order/@customer") String customer) {	//-> map customer attribute 
+			if (isGoldCustomer(customer)) {											//   of order element to this input string						
+				return new String[]{"jms:accounting", "jms:production"};
+			} else {
+				return new String[]{"jms:accounting"};
+			}
+		}
+		private boolean isGoldCustomer(String customer) {
+			return customer.equals("honda");
+		}
+	}
+
+USING THE WIRETAP METHOD
+------------------------
+
+Inspecting messages as they flow through a system is useful and necessary.
+For instance, when an order fails, you need a way to look at which messages 
+	were received to determine the cause of the failure.
+	
+You could use a simple processor, as you’ve done before, to output
+	information about an incoming message to the console or append it to a file.
+
+Here’s a processor that outputs the message body to the console:
+
+	from("jms:incomingOrders")
+	.process(new Processor() {
+		public void process(Exchange exchange) throws Exception {
+			System.out.println("Received order: " +
+			exchange.getIn().getBody());
+		}
+	});
+	
+This is fine for debugging purposes, but it’s a poor solution for production
+use. What if you wanted the message headers, exchange properties, or other
+data in the message exchange? 
+
+Ideally, you could copy the whole incoming exchange and send that to another channel for auditing. 
+
+By using the wireTap method in the Java DSL, you can send a copy of the
+	exchange to a secondary destination without affecting the behavior of the rest of the route:
+
+	from("jms:incomingOrders")
+	.wireTap("jms:orderAudit")	-> send a copy to orderAudit queue
+	.choice()
+	.when(header("CamelFileName").endsWith(".xml"))
+	.to("jms:xmlOrders")
+	.when(header("CamelFileName").regex("^.*(csv|csl)$"))
+	.to("jms:csvOrders")
+	.otherwise()
+	.to("jms:badOrders");
+
+The preceding code sends a copy of the exchange to the orderAudit queue,
+and the original exchange continues on through the route, as if you hadn’t
+used a wire tap at all. 
+
+Camel doesn’t wait for a response from the wire tap
+because the wire tap sets the message exchange pattern (MEP) to InOnly.
+The message will be sent to the orderAudit queue in a fire-and-forget fashion
+—it won’t wait for a reply.
+
+
+
+--------------------------------------------------------------------------------------------------------
+
+Data transformation overview
+----------------------------
+
+Transform from one form to another adapting to whatever protocol the receiver understands
+so that sender and receiver can communicate. This is called mediation. 
+
+Mediation and data transformation are key features in any integration kit, including Camel.
+
+1. Data format transformation
+		The data format of the message body is transformed from one form to another. 
+		For example, a CSV record is formatted as XML.
+
+2. Data type transformation—
+		The data type of the message body is transformed from one type to another. 
+		For example, java.lang.String is transformed into javax.jms.TextMessage.
 		
+In most cases, the data transformation you’ll face with Camel is format transformation: 
+you have to mediate between two protocols.
+
+
+USING THE MESSAGE TRANSLATOR EIP
+--------------------------------
+
+	Incoming message ----------> message translator ------------> Translated message
+	
+	
+	This pattern covers translating a message from one format to another. 
+	It’s the equivalent of the Adapter pattern from the Gang of Four book.
+
+Camel provides three ways of using this pattern:
+
+1. Using Processor
+2. Using Java beans
+3. Using <transform>
+
+	TRANSFORMING USING PROCESSOR
+	----------------------------
+
+		from("quartz2://report?cron=0+0+6+*+*+?")
 		
+		.to("http://riders.com/orders/cmd=received&date=yesterday")
 		
+		.process( exchange -> {
+			String custom = exchange.getIn().getBody(String.class); 
+			
+			//Gets custom payload
+			String id = custom.substring(0, 10); 
+			
+			//Extracts data to local variables
+			String customerId = custom.substring(10, 20); 
+			String date = custom.substring(20, 30); 
+			String items = custom.substring(30); 
+			String[] itemIds = items.split("@"); 
+			StringBuilder csv = new StringBuilder(); 
+			
+			//Maps to CSV format
+			csv.append(id.trim()); 
+			csv.append(",").append(date.trim()); 
+			csv.append(",").append(customerId.trim()); 
+			for (String item : itemIds) { 
+			csv.append(",").append(item.trim()); 
+			} 
+			exchange.getIn().setBody(csv.toString());
+			
+		 })
+		 
+		.to("file://riders/orders?fileName=report-${header.Date}.csv");
+
+		The preceding route uses Quartz to schedule a job to run once a day at 6 a.m.
+		It then invokes the HTTP service to retrieve the orders received yesterday,
+		which are returned in the custom format. Next, it uses OrderToCsvProcessor
+		to map from the custom format to CSV format before writing the result to a
+		file.
+
+		getIn and getOut methods
+		------------------------
+
+		getIn()		->  method returns the incoming message, and the 
+						A read-only scenario, such as when you’re logging the incoming message
+
+		getOut()	->	method accesses the outbound message
+						A write scenario, such as when you’re transforming the message
+
+		when using getOut: the incoming message headers and attachments will be
+		lost. So you must copy the headers and attachments from the incoming message to the outgoing message, 
+		which can be tedious. The alternative is to set the changes directly on the
+		incoming message by using getIn, and not to use getOut at all.
+
+	TRANSFORMING USING BEANS
+	------------------------
+	
+		The advantage is that Your bean is totally independent of the Camel API.
+		Easy to unit test since we won't be needing exchange object.
 		
+		from("quartz2://report?cron=0+0+6+*+*+?")
+		.to("http://riders.com/orders/cmd=received&date=yesterday")
+		.bean(new OrderToCsvBean())
+		.to("file://riders/orders?fileName=report-${header.Date}.csv");
+
+		The method name could be anything but it’s a static method.
 		
+		The method signature defines the contract, which means that the first
+		parameter (String custom) is the message body you’re going to use for
+		translation. The method returns a string, which means the translated data
+		will be a String type. At runtime, Camel binds to this method signature
+
+
+	USING THE TRANSFORM METHOD
+	--------------------------
 		
+		transform is a method in Camel which allows the use of expressions.
 		
+		from("direct:start")
+		.transform(body().regexReplaceAll("\n", "<br/>"))
+		.to("mock:result");
 		
+		Camel provides the Builder pattern to build compound expressions from individual expressions.
+		This is done by chaining together method calls, which is the essence of the Builder pattern.
+
+		The expression should be read as follows: take the body and perform a regular expression
+		that replaces all new lines (\n) with <br/> tags.
 		
+		The Direct component
+		--------------------
 		
+		The Direct component provides direct invocation between a producer and a consumer. 
+		It allows connectivity only from within Camel, so external systems can’t send messages
+		directly to it. 
+		This component is used within Camel to do things such as link routes together or for testing.
+
+		Custom expressions
+		------------------
 		
+		from("direct:start")
+		.transform(new Expression() {
+			public <T> T evaluate(Exchange exchange, Class<T> type) {
+				String body = exchange.getIn().getBody(String.class);
+				body = body.replaceAll("\n", "<br/>");
+				body = "<body>" + body + "</body>";
+				return (T) body;
+			}
+		})
+		.to("mock:result");
+
+USING THE CONTENT ENRICHER EIP
+------------------------------
+
+A message is enriched with data obtained from another resource.
+
+	Basic message 	-> 	Enricher	-> 	Enriched message
+							| use
+						Resource
+						
+						
+	1. pollEnrich -> 	This method merges data retrieved from another source by using a consumer.
+
+	2. enrich ->		This method merges data retrieved from another source by using a producer.
+
+	Difference
+	----------
+	
+	FileComponent can be used with both, but 
+	
+		1. using enrich will write the message content as a file 
+					
+		2. using pollEnrich will read the file as the source.
+		
+		1. enrich assumes you want to use an incoming Exchange as a parameter to an another service request. 
+			for example, your incoming Exchange could be a userID, but you really need the entire User object, 
+			so you could enrich it by passing the userID to a REST service that returns the User object 
+			which becomes the Exchange, etc.
+
+		2. pollEnrich assumes the incoming Exchange is a simple trigger that tell a PollingConsumer 
+			to look for data and create an Exchange (ignoring the contents of the incoming Exchange). 
+			For example, you could have a timer or other business process event that requires 
+			picking up a file for processing, etc. 
+			that said, the incoming Exchange data is NOT used to dynamically configure the PollingConsumer...
+			only the URI is used for this.
+					
+	
+	Camel uses the 
+	
+		org.apache.camel.processor.aggregate.AggregationStrategy interface 
+	
+	to merge the result from the source with the original message, as follows:
+	
+		Exchange aggregate(Exchange oldExchange, Exchange newExchange);	
+				
+			from("quartz2://report?cron=0+0+6+*+*+?")
+			.to("http://riders.com/orders/cmd=received&date=yesterday")
+			.process(new OrderToCsvProcessor())
+
+			.pollEnrich("ftp://riders.com/orders/?username=rider&password=secret", new AggregationStrategy() { 
+						//Uses pollEnrich to read FTP file
+						public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
+							if (newExchange == null) {
+								return oldExchange;
+							}
+							String http = oldExchange.getIn() 
+
+							Merges data using AggregationStrategy.getBody(String.class); 
+							String ftp = newExchange.getIn() 
+							.getBody(String.class); 
+							String body = http + "\n" + ftp; 
+							oldExchange.getIn().setBody(body); 
+							return oldExchange;
+						}
+					})
+			.to("file://riders/orders");
+
+	PollEnrich uses a polling consumer to retrieve messages, and it offers three time-out modes:
+	
+	1. pollEnrich(timeout=-1)		Polls the message and waits until a message arrives. 
+									This mode blocks until a message exists.
+	
+	2. pollEnrich(timeout = 0)		Immediately polls the message if any exists;
+									otherwise, null is returned. It never waits for messages to arrive, so this
+									mode never blocks. This is the default mode.
+	
+	3. pollEnrich(timeout>0)		Polls the message, and if no message exists, it waits
+									for one, waiting at most until the time-out triggers. This mode potentially
+									blocks.
+									It’s a best practice to either use timeout = 0 or assign a time-out value when
+									using pollEnrich to avoid waiting indefinitely if no message arrives
+
+
+
+
+
+
+
+
+
 
 
 

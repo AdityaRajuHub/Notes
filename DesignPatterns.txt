@@ -1,3 +1,6 @@
+
+3 types of design patterns
+
 1. Creational
 2. Behavioral
 3. Structural
@@ -237,7 +240,10 @@ The builder pattern allows for this finer granularity.
 
 ---------------------------------------------------------------------------
 
-Another difference is if we want to add another object into Factory, we need to modify the factory method- violates open close principle (close for modification and open for extension). Whereas, if want to add another car builder we can just create another builder and no change in director class as director constructor accept all builders– Extensible.
+Another difference is if we want to add another object into Factory, we need to modify the factory method- violates open close principle 
+(close for modification and open for extension). 
+Whereas, if want to add another car builder we can just create another builder and no change in 
+	director class as director constructor accept all builders– Extensible.
 
 //-------------------------------------------------------------------------------------------------------------------------------------
 
@@ -265,7 +271,7 @@ Adapter class = BankCustomer
 Target interface = CreditCard
 
 BankCustomer extends AccountDetails implements CreditCard
-Provides custom functionality by implementing few methods required for CreditCard related interface using the methods of AccountDetails.
+	Provides custom functionality by implementing few methods required for CreditCard related interface using the methods of AccountDetails.
 
 //-------------------------------------------------
 

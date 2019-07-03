@@ -12,6 +12,25 @@ Webservices -> No special software required
 SOAP - XML + Http
 Simple Object Access Protocol
 
+Why do we need a standard like SOAP? 
+-------------------------------------
+By exchanging XML documents over HTTP, two programs can exchange rich, structured information without the introduction 
+	of an additional standard such as SOAP to explicitly describe a message envelope format and a way to encode structured content.
+
+SOAP provides a standard so that developers do not have to invent a custom XML message format for every service they want to make available. 
+Given the signature of the service method to be invoked, the SOAP specification prescribes an unambiguous XML message format. 
+Any developer familiar with the SOAP specification, working in any programming language, 
+can formulate a correct SOAP XML request for a particular service and understand the 
+response from the service by obtaining the following service details.
+
+1. Service name
+2. Method names implemented by the service
+3. Method signature of each method
+4. Address of the service implementation (expressed as a URI)
+
+Using SOAP streamlines the process for exposing an existing software component as a Web service since the method signature 
+of the service identifies the XML document structure used for both the request and the response.
+
 
 				
 							<operation name="getEmplyeeDtlsById">
@@ -51,6 +70,7 @@ A simplified WSDL(Webservice Description Language)
 		<operation name="getEmployeeById">
 			<input message="getEmployeeByIdRequest" />
 			<output message="getEmployeeByIdResponse" />
+			<fault message="" />	-> when we throw an exception in the service
 		</operation>
 		
 	</portType>
@@ -153,6 +173,25 @@ ENCODED -> When SOAP encoding is used, the SOAP message contains data type infor
 
 	RPC/ENCODED
 	-----------
+	WSDL
+	----
+	<message name="myMethodRequest">
+		<part name="x" type="xsd:int"/>
+		<part name="y" type="xsd:float"/>
+	</message>
+	<message name="empty"/>
+	 
+	<portType name="PT">
+		<operation name="myMethod">
+			<input message="myMethodRequest"/>
+			<output message="empty"/>
+		</operation>
+	</portType>
+	 
+	<binding .../>  
+	-----------------------------------------
+	SOAP message
+	------------
 	<soap:envelope>
 		<soap:body>
 			<myMethod>
@@ -161,9 +200,19 @@ ENCODED -> When SOAP encoding is used, the SOAP message contains data type infor
 			</myMethod>
 		</soap:body>
 	</soap:envelope>
+	
+	Advantages: 
+	----------
+		The operation name appears in the message, so the receiver has an easy time dispatching this message to the implementation of the operation.
+		
+	Drawbacks:
+	----------
+		1. The type encoding info (such as xsi:type="xsd:int") is usually just overhead which degrades throughput performance.
+		2. You cannot easily validate this message since only the <x ...>5</x> and <y ...>5.0</y> 
+			lines contain things defined in a schema; the rest of the soap:body contents comes from WSDL definitions.
 
 LITERAL -> The SOAP message does not directly contain any data type information, just a reference (namespace) to the schema that is used.
-			To perform proper serialization (data translation) both, the sender and the receiver, 
+-------		To perform proper serialization (data translation) both, the sender and the receiver, 
 			must know the schema and must use the same rules for translating data.
 	
 	RPC/LITERAL
@@ -176,15 +225,145 @@ LITERAL -> The SOAP message does not directly contain any data type information,
 			</myMethod>
 		</soap:body>
 	</soap:envelope>
+	
+	Advantages:
+	-----------
+		1. The operation name still appears in the message.
+		2. The type encoding info is eliminated.
+		
+	Disadvantages:
+	-------------
+		1. You still cannot easily validate this message since only the <x ...>5</x> and <y ...>5.0</y> 
+			lines contain things defined in a schema; the rest of the soap:body contents comes from WSDL definitions.
 
 	DOCUMENT/LITERAL
 	----------------
+	
+	The WSDL for document/literal changes somewhat from the WSDL for RPC/literal. 
+	
+	WSDL
+	----
+	<types>
+		<schema>
+			<element name="xElement" type="xsd:int"/>
+			<element name="yElement" type="xsd:float"/>
+		</schema>
+	</types>
+	 
+	<message name="myMethodRequest">
+		<part name="x" <strong>element="xElement"</strong>/>
+		<part name="y" <strong>element="yElement"</strong>/>
+	</message>
+	<message name="empty"/>
+	 
+	<portType name="PT">
+		<operation name="myMethod">
+			<input message="myMethodRequest"/>
+			<output message="empty"/>
+		</operation>
+	</portType>
+	 
+	<binding .../>
+	----------------------------------------
+	SOAP MSG
+	---------
 	<soap:envelope>
 		<soap:body>
 			<x>5</x>
 			<y>5.0</y>
 		</soap:body>
 	</soap:envelope>
+	
+	Advantages:
+	----------
+		1. There is no type encoding info.
+		2. You can finally validate this message with any XML validator. Everything within the soap:body is defined in a schema.
+		
+	Weaknesses:
+	----------
+		1. The operation name in the SOAP message is lost. Without the name, dispatching can be difficult, and sometimes impossible.
+		
+	You can validate the message, but you lose the operation name.
+
+	Is there anything you can do to improve upon this? 
+	--------------------------------------------------
+	Yes. It's called the document/literal wrapped pattern.
+	
+	
+	Document/literal wrapped
+	------------------------
+	
+	<types>
+    <schema>
+        <strong><element name="myMethod">	-> this is just a wrapper added additionally to identify operation name
+            <complexType>
+                <sequence>
+                    <element name="x" type="xsd:int"/>
+                    <element name="y" type="xsd:float"/>
+                </sequence>
+            </complexType>
+        </element>
+        <element name="myMethodResponse">
+            <complexType/>
+        </element></strong>
+    </schema>
+	</types>
+	<message name="myMethodRequest">
+		<part name="<strong>parameters</strong>" element="<strong>myMethod</strong>"/>
+	</message>
+	<strong><message name="empty">
+		<part name="parameters" element="myMethodResponse"/>
+	</message></strong>
+	 
+	<portType name="PT">
+		<operation name="myMethod">
+			<input message="myMethodRequest"/>
+			<output message="empty"/>
+		</operation>
+	</portType>
+	 
+	<binding .../>  
+	
+	SOAP BODY
+	---------
+	
+	<soap:envelope>
+		<soap:body>
+			<myMethod>
+				<x>5</x>
+				<y>5.0</y>
+			</myMethod>
+		</soap:body>
+	</soap:envelope>
+
+	1. The <myMethod> clause is the name of the wrapper element which the single input message's part refers to. 
+	2. It just so happens that one of the characteristics of the wrapped pattern is that the 
+		name of the input element is the same as the name of the operation. 
+	3. This pattern is a sly way of putting the operation name back into the SOAP message.
+	
+	These are the basic characteristics of the document/literal wrapped pattern:
+
+	1. The input message has a single part.
+	2. The part is an element.
+	3. The element has the same name as the operation.
+	4. The element's complex type has no attributes.
+	
+	Advantages:
+	----------
+	1. There is no type encoding info.
+	2. Everything that appears in the soap:body is defined by the schema, so you can easily validate this message.
+	3. Once again, you have the method name in the SOAP message.
+	
+	Weaknesses:
+	----------
+		1. The WSDL is even more complicated.
+		2. When you have method overloading then two wrapper elements need to have same name which is not allowed.
+
+	When we have method overloading then RPC/literal is the best style to use.
+	
+	Refer to https://www.ibm.com/developerworks/library/ws-whichwsdl/
+
+-----------------------------------------------------------------------------------
 	
 	
 3. @WebMethod - represents a web service operation.
@@ -336,8 +515,26 @@ WSDL on a high level
 	needs to refer to the type.
 	
 	
-
-
+Note: 
+	1. Internally to generate the SOAP request and response messages, Java uses JAXB
+		which is Java API for XML binding.
+	2. So if you have to customize any element tag names in the request or response
+		you need to override with JAXB annotations.
+	3. Some annotations are 
+	
+			@XmlRootElement(name="Product") -> specifying that this is the root element
+			@XmlType(propOrder={"brand", "name", "price"})
+			class Product {
+				
+				@XmlElement(name="someName", defaultValue="X", nillable=false, 
+							required=true, type=String.class)
+				private String name;
+				
+				private String brand;
+				
+				private double price;
+			
+			}
 
 
 
