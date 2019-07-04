@@ -12,9 +12,16 @@ Code implementation is your responsibility.
 		Creational patterns often used in place of direct instantiation with constructors.
 		They can provide a great deal of flexibility about which objects are created, 
 			how those objects are created, and how they are initialized.
-2. Behavioral
-		
-3. Structural
+			
+2. Structural
+		Structural design patterns show us how to glue different pieces of a system together in a flexible and extensible fashion. 
+			These patterns help us guarantee that when one of the parts changes, the entire application structure does not need to change.
+			
+3. Behavioral
+		Behavioral patterns abstract an action we want to take on the object or class that takes the action. 
+		By changing the object or class, we can change the algorithm used, the objects affected, or the behavior, 
+			while still retaining the same basic interface for client classes.
+
 
 Creational
 ----------
@@ -744,31 +751,491 @@ Flyweight
 Bridge
 ------
 	
-	"Decouple an abstraction from its implementation so that the two can vary independently."
+	"Decouple an abstraction from its implementation so that the two can vary independently"
 	
 	Bridge design pattern is used to decouple a class into two parts – abstraction and it’s implementation – 
 		so that both can evolve in future without affecting each other. 
 	
 	It increases the loose coupling between class abstraction and it’s implementation.
 
+	Bridge is a synonym for the “handle/body” idiom. 
+	This is a design mechanism that encapsulates an implementation class inside of an interface class. 
+	The former is the body, and the latter is the handle. 
+	The handle is viewed by the user as the actual class, but the work is done in the body.
+	
+	You get this decoupling by adding one more redirection between methods calls from abstraction to implementation.
 
 
+	Following participants constitute the bridge design pattern.
+
+	1. Abstraction (abstract class)
+		It defined the abstract interface i.e. behavior part. It also maintains the Implementer reference.
+
+	2. RefinedAbstraction (normal class)
+		It extends the interface defined by Abstraction.
+
+	3. Implementer (interface)
+		It defines the interface for implementation classes. This interface does not need to correspond directly to abstraction interface and can be very different. Abstraction imp provides an implementation in terms of operations provided by Implementer interface.
+
+	4. ConcreteImplementor (normal class)
+		It implements the Implementer interface.
+		
+	Ex: 1. Webservices -> WSDL shouldn't change even if underlying implementation changes
+		
+		2. 
+		
+			public interface FileDownloaderAbstraction
+			{
+				public Object download(String path);
+				 
+				public boolean store(Object object);
+			}
+			
+			public class FileDownloaderAbstractionImpl implements FileDownloaderAbstraction {
+     
+				private FileDownloadImplementor provider = null;
+			 
+				public FileDownloaderAbstractionImpl(FileDownloadImplementor provider) {
+					super();
+					this.provider = provider;
+				}
+			 
+				@Override
+				public Object download(String path)
+				{
+					return provider.downloadFile(path);
+				}
+			 
+				@Override
+				public boolean store(Object object)
+				{
+					return provider.storeFile(object);
+				}
+			}
+		
+			public interface FileDownloadImplementor
+			{
+				public Object downloadFile(String path);
+				 
+				public boolean storeFile(Object object);
+			}
+
+			public class LinuxFileDownloadImplementor implements FileDownloadImplementor
+			{
+				@Override
+				public Object downloadFile(String path) {
+					return new Object();
+				}
+			 
+				@Override
+				public boolean storeFile(Object object) {
+					System.out.println("File downloaded successfully in LINUX !!");
+					return true;
+				}
+			}
+
+			public class WindowsFileDownloadImplementor implements FileDownloadImplementor
+			{
+				@Override
+				public Object downloadFile(String path) {
+					return new Object();
+				}
+			 
+				@Override
+				public boolean storeFile(Object object) {
+					System.out.println("File downloaded successfully in WINDOWS !!");
+					return true;
+				}
+			}
+			
+			public class Client
+			{
+				public static void main(String[] args)
+				{
+					String os = "linux";
+					FileDownloaderAbstraction downloader = null;
+			 
+					switch (os)
+					{
+						case "windows":
+							downloader = new FileDownloaderAbstractionImpl( new WindowsFileDownloadImplementor() );
+							break;
+							 
+						case "linux":
+							downloader = new FileDownloaderAbstractionImpl( new LinuxFileDownloadImplementor() );
+							break;
+							 
+						default:
+							System.out.println("OS not supported !!");
+					}
+					 
+					Object fileContent = downloader.download("some path");
+					downloader.store(fileContent);
+				}
+			}
+	Advantages
+	----------
+	
+	1. Change in abstraction does not affect implementation
+			Now let’s say you want to add one more capability (i.e. delete) at abstraction layer. 
+			It must not force a change in existing implementers and client as well.
+			Reason: Since the abstract class and it's abstract implementation are tied up and 
+						only they need to change, no need to change implementers.
+	
+	2. Change in implementation does not affect abstraction
+			Let’s say you want to add delete feature at implementation layer for all downloaders (an internal feature) 
+				which client should not know about.
 
 
+-----------------------------------------------------------------------------------------------------------------------
+
+3. Behavioral Design Patterns
+-----------------------------
+
+1. Chain of Responsibility
+--------------------------
+ 
+	"Gives more than one object an opportunity to handle a request by linking receiving objects together."
+	
+	Chain of Responsibility allows a number of classes to attempt to handle a request, independently of any other object along the chain. 
+		Once the request is handled, it completes it’s journey through the chain.
+ 
+	This pattern is recommended when multiple objects can handle a request and the handler doesn’t have to be a specific object. 
+	Also, handler is determined at runtime. Please note that that a request not handled at all by any handler is a valid use case.
+
+	Real world scenarios
+	--------------------
+
+	1. Event handling mechanism in windows OS where events can be generated from either mouse, keyboard or some automatic generated events. 
+		All such events can be handled by multiple handlers and correct handler is found on runtime.
+
+	2. More general example can be a service request to call center. This request can be handled at front desk level, supervisor level or any higher level. 
+		Correct handler of request is only known at runtime when request is traversing at various levels.
+		
+
+	Participants
+	------------
+		
+		1) Handler : This can be an interface which will primarily recieve the request and dispatches the request to chain of handlers. 
+			It has reference of only first handler in the chain and does not know anything about rest of the handlers.
+
+		2) Concrete handlers : These are actual handlers of the request chained in some sequential order.
+
+		3) Client : Originator of request and this will access the handler to handle it.
+
+---------------------------------------------------------------------------------
+ 
+2. Iterator
+-----------
+	"Provide a way to access the elements of an aggregate object sequentially without exposing its underlying representation."
+	
+	The iterator pattern allow us to design a collection iterator in such a way that –
+
+		1. We are able to access elements of a collection without exposing the internal structure of elements or collection itself.
+		
+		2. Iterator supports multiple simultaneous traversals of a collection from start to end in forward, backward or both directions.
+		
+		3. Iterator provide a uniform interface for traversing different collection types transparently.
+ 
+	Note: The key idea is to take the responsibility for access and traversal out of the aggregate object and put it into an 
+			Iterator object that defines a standard traversal protocol.
+			
+	Real world example
+	------------------
+	
+	In Java, we have java.util.Iterator interface and it’s specific implementations such as ListIterator. 
+	All Java collections provide some internal implementations of Iterator interface which is used to iterate over collection elements.
+	
+    
+	List<String> names = Arrays.asList("alex", "brian", "charles");
+             
+    Iterator<String> namesIterator = names.iterator();
+     
+    while (namesIterator.hasNext())
+    {
+        String currentName = namesIterator.next();
+         
+        System.out.println(currentName);
+	}
+	
+	Explanation:
+	-----------
+		List extends Iterable interface which has one method iterator() which it implements and 
+			names.iterator() returns an instance of ListIterator which implements Iterator interface.
+ 
+	
+	Design participants
+	-------------------
+		
+		1. Iterator: An interface to access or traverse the elements collection. Provide methods which concrete iterators must implement.
+		2. ConcreteIterator: implements the Iterator interface methods. 
+					It can also keep track of the current position in the traversal of the aggregate collection.
+			Ex: ListIterator
+		3. Aggregate: It is typically a collection interface which defines a method that can create an Iterator object.
+			Ex: List
+		4. ConcreteAggregate: It implements the Aggregate interface and its specific method returns an instance of ConcreteIterator.
+			Ex: ArrayList
+ 
+-----------------------------------------------------------------------------------
+
+Mediator
+--------
+
+	"An object that encapsulates how a set of objects interact."
+	
+	Mediator promotes loose coupling by keeping objects from referring to each other explicitly, 
+		and it lets us vary their interaction independently.
+ 
+	Mediator helps in establishing loosely coupled communication between objects and helps in reducing the direct references to each other. 
+	This helps in minimizing the complexity of dependency management and communications among participating objects.
+	
+	Mediator helps to facilitate the interaction between objects in a manner in that objects are not aware of the existence of other objects. 
+	Objects depend only on a single mediator class instead of being coupled to dozens of other objects.
+	
+	When to use?
+	-----------
+	A situation where multiple objects need to interact with each other to process the request, 
+		but direct communication may create a complex system, you can consider using mediator pattern.
+ 
+	Real world example
+	------------------
+	
+	1. Air traffic control
+			If all flights will have to interact with each other for finding which flight is going to land next, it will create a big mess.
+			
+	2. Chat Room App
+			A hub where all participants will connect; this hub is just the mediator class.
+ 
+	Design participants
+	-------------------
+		1. Mediator – 			defines the interface for communication between Colleague objects
+		
+		2. ConcreteMediator – 	implements the Mediator interface and coordinates communication between Colleague objects. 
+								It is aware of all of the Colleagues and their purposes with regards to inter-communication.
+								
+		3. Colleague – 			defines the interface for communication with other Colleagues through its Mediator
+		
+		4. ConcreteColleague – 	implements the Colleague interface and communicates with other Colleagues through its Mediator
+ 
+-------------------------------------------------------------------------------------------
+
+Momento
+-------
+	"used to restore state of an object to a previous state."
+	It is also known as snapshot pattern.
+	
+	The intent of memento pattern is to capture the internal state of an object without violating encapsulation and 
+		thus providing a means for restoring the object into initial state when needed.
+	
+	A memento is is like a restore point during the life cycle on the object, 
+		which the client application can use to restore the object state to its state. 
+	Conceptually, it is very much like we create restore points for operating systems and use to restore the system if something breaks or system crashes.
+	
+	1. To rollback or undo the changes changes at any point.
+		Ex: Checkpoints in DB transactions are used to rollback to stable DB state.
+	
+	2. To restart from their last known working state or draft.
+		Ex: Eclipse IDE
+		
+	The memento design pattern can be implemented in many different ways such as 
+		1. Inner classes, 
+		2. Package-private visibility or 
+		3. Serialization etc.
+ 
+	Design participants
+	-------------------
+		
+		1. Originator – is the object that knows how to create and save it’s state for future. It provides methods createMemento() and restore(memento).
+		
+		2. Memento –   	the lock box that is written and read by the Originator, and shepherded by the Caretaker. 
+						In principle, a memento must be in immutable object so that no one can change it’s state once created.
+						
+		3. Caretaker – 	performs an operation on the Originator while having the possibility to rollback. 
+						It keeps track of multiple mementos. Caretaker class refers to the Originator class for 
+						saving (createMemento()) and restoring (restore(memento)) originator’s internal state.
+ 
+ 
+		1. Originator
+		-------------
+		public class Article
+		{
+			private long id;
+			private String title;
+			private String content;
+			 
+			public Article(long id, String title) {
+				super();
+				this.id = id;
+				this.title = title;
+			}
+			 
+			//Setters and getters
+			 
+			public ArticleMemento createMemento()
+			{
+				ArticleMemento m = new ArticleMemento(id, title, content);
+				return m;
+			}
+			 
+			public void restore(ArticleMemento m) {
+				this.id = m.getId();
+				this.title = m.getTitle();
+				this.content = m.getContent();
+			}
+		 
+			@Override
+			public String toString() {
+				return "Article [id=" + id + ", title=" + title + ", content=" + content + "]";
+			}
+		}
+		
+		2.Momento
+		---------
+		public final class ArticleMemento
+		{
+			private final long id;
+			private final String title;
+			private final String content;
+			 
+			public ArticleMemento(long id, String title, String content) {
+				super();
+				this.id = id;
+				this.title = title;
+				this.content = content;
+			}
+		 
+			public long getId() {
+				return id;
+			}
+		 
+			public String getTitle() {
+				return title;
+			}
+		 
+			public String getContent() {
+				return content;
+			}
+		}
+		3. Caretaker
+		------------
+		public class Main
+		{
+			public static void main(String[] args)
+			{
+				Article article = new Article(1, "My Article");
+				article.setContent("ABC");      //original content
+				System.out.println(article);
+				 
+				ArticleMemento memento = article.createMemento();   //created immutable memento
+				 
+				article.setContent("123");      //changed content
+				System.out.println(article);
+				 
+				article.restore(memento);       //UNDO change
+				System.out.println(article);    //original content
+			}
+		}
+		
+---------------------------------------------------------------------------------------------------
+
+Observer
+--------
+	"one-to-many dependency between objects so that when one object changes state, all its dependents are notified and updated automatically."
+	It is also referred to as the publish-subscribe pattern.
+	
+	In observer pattern, there are many observers (subscriber objects) that are observing a particular subject (publisher object). 
+		Observers register themselves to a subject to get a notification when there is a change made inside that subject.
+	
+	A observer object can register or unregister from subject at any point of time. 
+		It helps is making the objects objects loosely coupled.
+		
+	Real world scenarios
+	--------------------
+		1. Instagram, Twitter, Facebook notifications are sent to all the followers.
+			A follower can follow or unfollow another person at any point of time. 
+			Once unfollowed, person will not get the notifications from subject in future.
+		
+		2. All keyboard and mouse events are handled by it’s listeners objects and designated functions. 
+ 
+	Design participants
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+		1. Subject – interface or abstract class defining the operations for attaching and de-attaching observers to the subject.
+		2. ConcreteSubject – concrete Subject class. It maintain the state of the object and when a change in the 
+								state occurs it notifies the attached Observers.
+		3. Observer – interface or abstract class defining the operations to be used to notify this object.
+		4. ConcreteObserver – concrete Observer implementations.
+ 
+	public interface Subject
+	{
+		public void subscribe(Observer o);
+		public void unsubscribe(Observer o);
+		public void notifyUpdate(Message m);
+	}
+ 
+	public class MessagePublisher implements Subject {
+     
+		private List<Observer> observers = new ArrayList<>();
+ 
+		@Override
+		public void subscribe(Observer o) {
+			observers.add(o);
+		}
+	 
+		@Override
+		public void unsubscribe(Observer o) {
+			observers.remove(o);
+		}
+	 
+		@Override
+		public void notifyUpdate(Message m) {
+			for(Observer o: observers) {
+				o.update(m);
+			}
+		}
+	}
+	
+	public interface Observer
+	{
+		public void next(Message m);
+	}
+	
+	public class MessageSubscriberOne implements Observer
+	{
+		@Override
+		public void next(Message m) {
+			System.out.println("MessageSubscriberOne :: " + m.getMessageContent());
+		}
+	}
+ 
+	public class MessageSubscriberTwo implements Observer
+	{
+		@Override
+		public void next(Message m) {
+			System.out.println("MessageSubscriberTwo :: " + m.getMessageContent());
+		}
+	}
+	
+	Main.java
+	---------
+	
+		MessageSubscriberOne s1 = new MessageSubscriberOne();
+        MessageSubscriberTwo s2 = new MessageSubscriberTwo();
+		
+		MessagePublisher p = new MessagePublisher();
+		p.subscribe(s1);
+		p.subscribe(s2);
+		
+		p.notifyUpdate(new Message("Some message"));
+ 
+		p.unsubscribe(s1);
+		p.unsubscribe(s2);
+ 
+----------------------------------------------------------------------------------------------
+ 
+ 
+ 
+ 
  
  
  
