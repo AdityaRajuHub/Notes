@@ -1,0 +1,125 @@
+
+Spring boot is a way in which u can bootstrap or quickly startup a spring application.
+We can easily create Production ready application in a matter of seconds.
+
+Spring is spring application and boot is bootstrap
+
+Official definition: 
+	Spring boot makes it easy to create standalone Prod-grade Spring based applications that you can just run.
+
+What is Spring ? 
+----------------
+	Application framework - Enterprise java applications
+
+	Programming and configuration model - allows us to focus on business problem, takes care of other things like 
+	for a service class if we annotate with @service then it manages the life cycle of that class and does lot more things
+
+	Infrastructure support - easily connect to any DB while leveraging spring
+
+Problems 
+--------
+	1. Huge framework
+	2. Multiple setup steps
+	3. Multiple configuration steps
+	4. Multiple build and deploy steps
+
+Can we abstract these steps???
+
+Spring Boot
+------------
+
+	1. Opinionated - meaning: someone who like to share their opinion
+		It makes certain config choices/decisions for us and says start with this and lets u start with it, 
+			and then later on if required we can make our own choice whether to change it
+
+	2. Convention over configuration: 
+		Majority use case it works. For 80% the config provided by sb works, for 20% u can change the config
+
+	3. Stand alone: 
+		gives apring app which is stand alone. It gives u something which can directly run.
+			contains a web container.
+
+	4. Production ready
+
+---------------------------------
+
+Requirements:
+
+	Spring Tool SUite
+	Maven -> Build tool, Dependancy management tool, contains archetype
+	Java8
+------------------------------------
+
+
+Create a default maven project
+
+Add the following in pom
+
+  <parent>
+  	<groupId>org.springframework.boot</groupId>
+  	<artifactId>spring-boot-starter-parent</artifactId>
+  	<version>1.4.2.RELEASE</version>
+  </parent>
+  
+  <dependencies>
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-web</artifactId>
+  	</dependency>  	
+  </dependencies>
+  
+  The parent is giving us the configuration which means Version info of jars (dependencyManagement)
+	and dependancies are those jars getting downloaded.
+
+  Note: dependencyManagement is used to provide a dependency template or a mechanism for 
+	centralizing dependencies information which contains version, scope and other details of each dependency.
+
+  for ex: if we change version in parent from 1.4.2 to 1.0.0 then the jars downloaded would actually be older one's.
+  tomcat-embed-core-8.5.6.jar would change to tomcat-embed-core-7.0.52.jar
+  
+  This is called Bill of materials. It means that for each version in parent, 
+  there is a combination of dependencies that are compatible to work with will get downloaded.
+  
+	Now all the default dependancies get downloaded for creating a spring web application.
+
+	Create a simple java class with main method.
+
+	Annotate the class with @SpringBootApp
+
+	Inside the main method we need to register this class with Spring boot
+	we do that by calling static run method (adding below line)
+
+	SprintApplication.run(App.class, args);
+
+	Then run the application as Java application.
+
+Spring boot does the following:
+-------------------------------
+	1. Sets up default configuration
+	2. Starts Spring app context
+	3. Performs classpath scans
+	4. Starts tomcat server
+
+Embedded Tomcat server
+-------------------------------
+	1. Convenience
+	2. Servlet container config is now application config
+	3. Standalone application
+	4. Useful for microservices architecture
+
+Different ways to create Spring boot app
+
+1. Spring Intializr
+	Go to https://start.spring.io/ 
+	Choose the kind of project you want
+	It will give u a pom which u can download
+	U can import the pom into ur eclipse projects
+	
+2. Spring boot CLI(command line interface)
+
+3. Spring Tool Suite
+	Choose all the options and click on generate 
+	It communicates with start.spring.io over the internet 
+	and downloads the project and opens it in the IDE as a project
+
+

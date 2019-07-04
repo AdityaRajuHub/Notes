@@ -4,70 +4,77 @@ Angular 7
 Including Bootstrap in angular
 
 There is three way to include bootstrap in your project 
-1) Add CDN Link in index.html file 
-2) Install bootstrap using npm and set path in angular.json Recommended
-3) Install bootstrap using npm and set path in index.html file
+	1) Add CDN Link in index.html file 
+	2) Install bootstrap using npm and set path in angular.json Recommended
+	3) Install bootstrap using npm and set path in index.html file
 
-I recommended you following 2 methods that are installed bootstrap using npm because its installed in your project directory and you can easily access it
+I recommended you follow 2 methods that are installing bootstrap using npm because its installed in your project directory and you can easily access it
 
 Method 1
-
+--------
 Add Bootstrap, Jquery and popper.js CDN path to you angular project index.html file
 
-Bootstrap.css
-https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-Bootstrap.js
-https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" 
-Jquery.js
-https://code.jquery.com/jquery-3.2.1.slim.min.js
-Popper.js
-https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js
+	Bootstrap.css
+		https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+	Bootstrap.js
+		https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" 
+	Jquery.js
+		https://code.jquery.com/jquery-3.2.1.slim.min.js
+	Popper.js
+		https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js
 
 Method 2
+--------
+	1) Install bootstrap using npm
 
-1) Install bootstrap using npm
+	npm install bootstrap --save
+		after the installation of Bootstrap 4, we Need two More javascript Package that is Jquery and Popper.js without 
+		these two package bootstrap is not complete because Bootstrap 4 is using Jquery and popper.js package so we have to install as well
 
-npm install bootstrap --save
-after the installation of Bootstrap 4, we Need two More javascript Package that is Jquery and Popper.js without these two package bootstrap is not complete because Bootstrap 4 is using Jquery and popper.js package so we have to install as well
+	2) Install JQUERY
 
-2) Install JQUERY
+		npm install jquery --save
+		
+	3) Install Popper.js
 
-npm install jquery --save
-3) Install Popper.js
+		npm install popper.js --save
+		
+	Now Bootstrap is Install on you Project Directory inside node_modules Folder
 
-npm install popper.js --save
-Now Bootstrap is Install on you Project Directory inside node_modules Folder
+	open angular.json this file are available on you angular directory open that file and add the path of bootstrap, jquery, and popper.js files 
+		inside styles[] and scripts[] path see the below example
 
-open angular.json this file are available on you angular directory open that file and add the path of bootstrap, jquery, and popper.js files inside styles[] and scripts[] path see the below example
-
-"styles": [   
-    "node_modules/bootstrap/dist/css/bootstrap.min.css",
-    "styles.css"
-  ],
-  "scripts": [  
-    "node_modules/jquery/dist/jquery.min.js",
-    "node_modules/popper.js/dist/umd/popper.min.js",
-    "node_modules/bootstrap/dist/js/bootstrap.min.js"
-  ],
-Note: Don't change a sequence of js file it should be like this
+	"styles": [   
+		"node_modules/bootstrap/dist/css/bootstrap.min.css",
+		"src/styles.css"
+	  ],
+	  "scripts": [  
+		"node_modules/jquery/dist/jquery.min.js",
+		"node_modules/popper.js/dist/umd/popper.min.js",
+		"node_modules/bootstrap/dist/js/bootstrap.min.js"
+	  ],
+	Note: Don't change a sequence of js file it should be like this
 
 Method 3
+--------
+	Install bootstrap using npm follow Method 2 in method 3 we just set path inside index.html file instead of angular.json file
 
-Install bootstrap using npm follow Method 2 in method 3 we just set path inside index.html file instead of angular.json file
+	bootstrap.css
+	--------------
+		<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css","styles.css">
 
-bootstrap.css
+	Jquery.js
+	---------
+		<script src="node_modules/jquery/dist/jquery.min.js"><br>
 
-    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css",
-        "styles.css">
-Jquery.js
+	Bootstrap.js
+	------------
+		<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"><br>
 
-<script src="node_modules/jquery/dist/jquery.min.js"><br>
-Bootstrap.js
+	Popper.js
+	---------
+		<script src="node_modules/popper.js/dist/umd/popper.min.js"><br>
 
-<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"><br>
-Popper.js
-
-<script src="node_modules/popper.js/dist/umd/popper.min.js"><br>
 Now Bootstrap Working fine Now
 --------------------------------------------------------------------------
 
@@ -76,244 +83,358 @@ Decorator
 @Component
 
 Life cycle hooks
-1. ngOnChanges 		-> called when the @Input property on the component changes value, we have access to curr and prev values
-2. ngInit()			-> called once during component init
-3. ngOnDestroy() 	-> called once before destroying component
+	
+	The constructor of the component class executes, first, before the execution of any other lifecycle hook events.
+	The constructor is the best place to inject the dependencies.
+	
+	1. constructor
+	
+	Lifecycle methods with the basic component
+	------------------------------------------
+	
+	2. ngOnChanges 		-> called everytime when the @Input property on the component changes value(primitive value or reference changes)
+						-> it always receives a change data map, 
+							containing the current and previous value of the bound property wrapped in a SimpleChange.						
+						
+	3. ngOnInit()		-> called once when the component is loaded into the DOM.
+						-> this event initializes after Angular first displays the data-bound properties
+						-> mainly used to the initialize data in a component
+	
+	4. ngDoCheck()		-> called everytime there is a change detection and manually triggers it	
+							If the model reference doesn’t change, but some property of the Input model changes, 
+							then ngOnChanges will never be called and hence ur view will not be updated in child-component
+							but ngOnCheck will be called and you may implement the ngDoCheck lifecycle hook 
+							to construct your change detection logic manually.
+						
+	5. ngOnDestroy() 	-> called once before destroying component meaning before component is removed from the DOM.
+						-> useful for unsubscribing from the observables and detaching the event handlers to avoid memory leaks. 
+						
+	Lifecycle methods with component’s view
+	---------------------------------------
+	These lifecycle methods are called once the view is loaded.
+		
+		1. ngAfterViewinit()	-> called once after view and child views are loaded in DOM.
+		
+		2. ngAfterViewChecked()	-> called once after ngAfterViewinit and everytime after ngDoCheck()
+		
+	Lifecycle methods with content projection into Component’s view
+	---------------------------------------------------------------
+	In Angular, There is a way we can project content into the component’s view. 
+	Look at the following illustration, whatever you put between the component tag will be projected 
+	into the component’s view in place of <ng-content>. 
+	
+	These lifecycle methods will be called once content projection is completed
+	
+	1. ngAfterContentInit()		-> called whenever Angular projects content into the view that this directive is in. 
+									This is called only once after ngDoCheck.
+	
+	2. ngAfterContentChecked()	-> 	
+	
 
 1. The selector can be mentioned in 3 ways 
-HTML Tag 		->selector: 'app-test'
-HTML class		->selector: '.app-test'
-HTML attribute	->selector: '[app-test]'
+
+	HTML Tag 		-> selector: 'app-test'
+	HTML class		-> selector: '.app-test'
+	HTML attribute	-> selector: '[app-test]'
 
 2. The template can be specified in 2 ways
-Inline			-> for specifying in multiple line use `` instead of '' 
-HTML file		-> specify relative path of HTML
 
-3. style can be
-Inline			-> use `` for multiple lines
-CSS file
+	Inline			-> for specifying in multiple line use `` instead of '' 
+	HTML file		-> specify relative path of HTML
+
+3. Style can be
+
+	Inline			-> use `` for multiple lines
+	CSS file path
 
 -----------------------------------------------
-Interpolation - {{ }}
-{{ expression }} {{ property }} 
-there cannot be
--> an assignment within curly braces
--> global variables like window, document etc for this to work simply 
-assign a variable with window.location.href in ts file and use that in curly braces 
+
+	Interpolation - {{ }}
+	{{ expression }} {{ property }} 
+
+	There cannot be
+	-> an assignment within curly braces
+	-> global variables like window, document etc for this to work simply 
+		assign a variable with window.location.href in .ts file and use that in curly braces 
 
 -----------------------------------------------
 
 Attribute vs Property
+---------------------
+	They are not the same.
+	
+	Attributes 	- HTML
+	Property 	- DOM
+	
+	Attributes initialize the DOM and then they cannot change while properties can change.
 
-are not the same
-Attributes - HTML
-Property - DOM
-Attributes initialize the DOM and then they cannot change while properties can change
-
-element.getAttribute('attr1') -> someValue
-element.value = differentValue
+	element.getAttribute('attr1') -> someValue
+	element.value = differentValue
 -----------------------------------------------
 
 Class binding -> dynamically add or remove classes to an element
+-------------
+
 When class="someClasses" and [class] attribute both are present angular [class] will be applied
 
-1. [class]= "text-success" 					-> directly adding class
-2. [class.text-success]= "isSuccess"		-> applying class only if isSuccess is true -> only for single class
+	1. [class]= "'text-success'"				-> directly adding class
+	
+	2. [class.text-success]= "isSuccess"		-> applying class only if isSuccess is true -> only for single class
+
 For mutiple classes use below
-3. [ngClass]= "messageClasses"
-messageClasses= {
-	"text-success": !this.hasError,
-	"text-danger": this.hasError,
-	"text-special": this.isInfo
-}
+
+	3. [ngClass]= "messageClasses"
+
+		messageClasses= {
+			"text-success": !this.hasError,
+			"text-danger": this.hasError,
+			"text-special": this.isInfo
+		}
 
 Style attribute
+----------------
 
-1. [style.color]= "'red'"
-2. [style.color]= "isError ? 'red' : 'green'"
-3. [ngStyle]= "myStyle"
-myStyle= {
-	color: "purple",
-	fontStyle: "italic"
-}
+	1. [style.color]= "'red'"
+
+	2. [style.color]= "isError ? 'red' : 'green'"
+
+	3. [ngStyle]= "myStyle"
+	
+		myStyle= {
+			color: "purple",
+			fontStyle: "italic"
+		}
 
 ---------------------------------------------------
+
 Bindings:
+--------
 
 1. Data Binding 		-> data flow from js to view
 
 2. Event Binding		-> events flow from view to js
-(click)= "someFunction($event)" pass event object to the function
+	
+	(click)= "someFunction($event)" pass event object to the function
 
 3. Template reference variables -> refer some other element inside other element
-<input #myInput type="text"/>
-<button (click)= "someFun(myInput.value)">Click</button>
+
+	<input #myInput type="text"/>
+	<button (click)= "someFun(myInput.value)">Click</button>
 
 2-way Binding
 -------------
-Using ngModel directive -> ************requires FormsModule
-<input type="text" [(ngModel}]= "myInput"/>
+
+	Using ngModel directive -> ************requires FormsModule
+
+	<input type="text" [(ngModel}]= "myInput"/>
 
 ----------------------------------------------------
 
 Conditional directives - Use on the element to render or not
 -------------------------------------------------------------
-1. *ngIf ="true/false"
-<h2 *ngIf="isHeader; else elseBlock">	-> template reference variable
-	Some header content here
-</h2>
-OR
-<div *ngIf="isHeader; then thenBlock; else elseBlock">	-> template reference variable
-	Some header content here
-</div>
 
-<ng-template #elseBlock>
-	<div>Some other content here</div>
-</ng-template>	
--------------------
-2. *ngSwitch
-<div [ngSwitch]="color">
-	<div *ngSwitchCase="'red'">Yu picked red</div>
-	<div *ngSwitchCase="'blue'">Yu picked blue</div>
-	<div *ngSwitchDefault=>Pick again</div>
-</div>
+	1. *ngIf ="true/false"
+	
+		<h2 *ngIf="isHeader; else elseBlock">	-> template reference variable
+			Some header content here
+		</h2>
+		OR
+		<div *ngIf="isHeader; then thenBlock; else elseBlock">	-> template reference variable
+			Some header content here
+		</div>
 
-Loop directive
+		<ng-template #elseBlock>
+			<div>Some other content here</div>
+		</ng-template>	
+		
+	-------------------
+	
+	2. *ngSwitch
 
-3. *ngFor
-colors= ["red", "green", "blue"];
-<div *ngFor="let color of colors; index as i"> 		-> index, first, last, odd, even
-	{{color}}
-</div>
+		<div [ngSwitch]="color">
+			<div *ngSwitchCase="'red'">Yu picked red</div>
+			<div *ngSwitchCase="'blue'">Yu picked blue</div>
+			<div *ngSwitchDefault=>Pick again</div>
+		</div>
+
+	Loop directive
+	--------------
+	3. *ngFor
+	
+		colors= ["red", "green", "blue"];
+		<div *ngFor="let color of colors; index as i"> 		-> index, first, last, odd, even
+			{{color}}
+		</div>
 
 -------------------------------------------------------------------------------------
 
 Component Interaction
 ---------------------
 
-Parent component <-> Child component
+	Parent component <-> Child component
 
-Parent -> attributes -> Child
+	Parent -> attributes -> Child
 
-Child  -> events 	 -> Parent
+	Child  -> events 	 -> Parent
 
 ParentComponent.ts
 ------------------
-public parentData: string = "Hello Kid...";
-<child-component (childEvent)= "messageFromChild=$event" [parentData]= "name"/>
+	
+	public parentData: string = "Hello Kid...";
+	
+	<child-component (childEvent)= "messageFromChild=$event" [parentData]= "name"/>
 
-{{ messageFromChild }}
+	{{ messageFromChild }}
 
 ChildComponent.ts
 -----------------
-@Input('parentData') public name;
-{{ name }}
 
-<button (click)= "fireEvent()">Fire</button>
-@Output() public childEvent = new EventEmitter();
-fireEvent() {
-	this.childEvent.emit("Hey Dad...");
-}
+	@Input('parentData') public name;
+	{{ name }}
+
+	<button (click)= "fireEvent()">Fire</button>
+	
+	@Output() public childEvent = new EventEmitter();
+	fireEvent() {
+		this.childEvent.emit("Hey Dad...");
+	}
+--------------------------------------------------------------------------------
+
+Projecting content from Parent to Child
+-------------------------------
+
+	Whatever is placed between a child component's tag will be projected into the child 
+	view in the place of <ng-content></ng-content>
+	
+	Ex: <app-employee>
+			<div>
+				<label>Content projection from Parent</label>
+				<p>This content displayed in child is actually in Parent template</p>
+			</div>
+		</app-employee>
+		
+		Employee component's template needs to have <ng-content> and the content
+		between <app-employee> will be replace with the ng-content tag.
+	
+	We can have another component inside the <app-employee> as well.
+	
+	// displaying app-error when there are no items
+	<app-employee *ngIf="itemList.length ==0">
+		<app-error-message message="There are no items in the list">      
+		</app-error-message>
+	</app-employee>
+	
+	We can have access to the inner component in employee component as below
+		
+		@ContentChild(ErrorMessageComponent) errorMessage: ErrorMessageComponent;
+
+		ngAfterContentInit() {
+			console.log('------ngAfterContentInit-----');
+			console.log(this.errorMessage.message);
+			this.errorMessage.message = this.errorMessage.message.toUpperCase();
+		}
 
 -----------------------------------------------------------------------------------
 
 Pipes
 -----
 
-Just like Unix pipe, works on the output of the previous expression
+	Just like Unix pipe, works on the output of the previous expression
 
-String operations
------------------
-public name="codEvolution";
-public name="This is the way forward";
-1. <div> {{ name | lowercase }}</div>	codevolution
-1. <div> {{ name | uppercase }}</div> CODEVOLUTION
-1. <div> {{ name | slice:3:5 }}</div> Ev
+	String operations
+	-----------------
+		public name="codEvolution";
+		public name="This is the way forward";
+		
+		1. <div> {{ name | lowercase }}</div>	codevolution
+		1. <div> {{ name | uppercase }}</div> CODEVOLUTION
+		1. <div> {{ name | slice:3:5 }}</div> Ev
 
-1. <div> {{ message | titlecase }}</div> This Is The Way Forward
+		1. <div> {{ message | titlecase }}</div> This Is The Way Forward
 
 
-1. <div> {{ jsonObj | json }}</div>	-> prints the json representation directly
+		1. <div> {{ jsonObj | json }}</div>	-> prints the json representation directly
 
-Number pipes
-------------
-1. <div> {{ 5.678 | number:1.2-3 }}</div> 	-> 5.678
-1. <div> {{ 5.678 | number:3.4-5 }}</div>	-> 005.6780
-1. <div> {{ 5.678 | number:3.1-2 }}</div>	-> 005.68
+	Number pipes
+	------------
+		1. <div> {{ 5.678 | number:1.2-3 }}</div> 	-> 5.678
+		1. <div> {{ 5.678 | number:3.4-5 }}</div>	-> 005.6780
+		1. <div> {{ 5.678 | number:3.1-2 }}</div>	-> 005.68
 
-Percent
--------
-1. <div> {{ 0.25 | percent }}</div>	-> 25%
+	Percent
+	-------
+		1. <div> {{ 0.25 | percent }}</div>	-> 25%
 
-Currency
---------
-1. <div> {{ 0.25 | currency }}</div>	-> $0.25
-1. <div> {{ 0.25 | currency:'GBP' }}</div>	-> L0.25
-1. <div> {{ 0.25 | currency:'EUR': 'code' }}</div>	-> EUR0.25
+	Currency
+	--------
+		1. <div> {{ 0.25 | currency }}</div>	-> $0.25
+		1. <div> {{ 0.25 | currency:'GBP' }}</div>	-> L0.25
+		1. <div> {{ 0.25 | currency:'EUR': 'code' }}</div>	-> EUR0.25
 
-1. <div> {{ currDate | date: 'short' }}</div>	-> 12/3/17 9:50PM
-1. <div> {{ currDate | date: 'shortDate' }}</div>	-> 12/3/17
-1. <div> {{ currDate | date: 'shortTime' }}</div>	-> 9:50PM 
-1. <div> {{ currDate | date: 'mediumDate, mediumTime, longDate, longTime' }}</div>
+		1. <div> {{ currDate | date: 'short' }}</div>	-> 12/3/17 9:50PM
+		1. <div> {{ currDate | date: 'shortDate' }}</div>	-> 12/3/17
+		1. <div> {{ currDate | date: 'shortTime' }}</div>	-> 9:50PM 
+		1. <div> {{ currDate | date: 'mediumDate, mediumTime, longDate, longTime' }}</div>
 
 ----------------------------------------------------------------------------------------
 
 Services
 --------
 
-A class with a specific purpose
+	A class with a specific purpose
 
-1. Share Data
-2. Applcation logic
-3. External Interaction - DB
+	1. Share Data
+	2. Applcation logic
+	3. External Interaction - DB
 
-Naming convention - *.service.ts
+	Naming convention - *.service.ts
 
 Dependency Injection
 --------------------
 
-A class receives it's dependencies from external sources rather than creating them itself
+	A class receives it's dependencies from external sources rather than creating them itself
 
 Without DI	-> tightly coupled to implementation
 ----------
-class Car {
-	constructor() {
-		this.engine= new Engine();
-		this.tyres= new Tyres();
+	class Car {
+		constructor() {
+			this.engine= new Engine();
+			this.tyres= new Tyres();
+		}
 	}
-}
 
 With DI -> loosely coupled
 -------
-class Car {
-	constructor(private engine: Engine, private tyres: Tyres) {
-		this.engine= engine;
-		this.tyres= tyres;
+	class Car {
+		constructor(private engine: Engine, private tyres: Tyres) {
+			this.engine= engine;
+			this.tyres= tyres;
+		}
 	}
-}
 
 
 When we do it ourself (it become difficult to create the dependencies ourselves since there could be many)
 ---------------------
-engine:Engine	= new Engine(params...);
-tyres:Tyres		= new Tyres(params...);
-	.					.
-	.					.
-	.					.
-car: Car 		= new Car(engine, tyres, ...);
+
+	engine:Engine	= new Engine(params...);
+	tyres:Tyres		= new Tyres(params...);
+		.					.
+		.					.
+		.					.
+	car: Car 		= new Car(engine, tyres, ...);
 
 With Angular's Dependency Injection
 -----------------------------------
-Injectory -> Dependencies -> Car
+	Injectory -> Dependencies -> Car
 
 Creating Services
 -----------------
 
-1. Define the Service class (with @Injectable decorator)
-2. Register the class with Injector	(within the module's (provider), then all of it's registered components (declartions) will have the service)
-3. Use it in the component classes
+	1. Define the Service class (with @Injectable decorator)
+	2. Register the class with Injector	(within the module's (provider), then all of it's registered components (declartions) will have the service)
+	3. Use it in the component classes
 
-@Injectable() decorator on a service informs that this service may depend upon other services
+@Injectable() decorator on a service informs that this service may depend upon other services.
 
 -----------------------------------------------------------------------------------------------
 
@@ -322,43 +443,44 @@ Observable
 
 A sequence of items that arrive asynchronously over time.
 
-HttpCall - single item
-single item - Http response is the observable
+	HttpCall - single item
+	single item - Http response is the observable
 
 We process the observable and convert it to an array and supply only to the one subscribed.
 
-1. Http request from service
-2. Receive the observable and cast it to an array
-3. Subscribe to the observable from component
-4. Assign the array to local variable
+	1. Http request from service
+	2. Receive the observable and cast it to an array
+	3. Subscribe to the observable from component
+	4. Assign the array to local variable
 
 RxJS is the external library to work with observables.
 
-@Injectable
-export class EmployeeService {
-	private _url: string= '/assets/data/employees.json';
+	@Injectable
+	export class EmployeeService {
 	
-	constructor(private http: HttpClient) {}
+		private _url: string= '/assets/data/employees.json';
+		
+		constructor(private http: HttpClient) {}
 
-	getEmployees: Observable<Employee[]>{
-		return this.http.get<Employee[]>(this._url)
-		.catch(this.errorHandler);
-	};
-	
-	errorHandler(error: HttpErrorResponse) {
-		return Observable.throw(error.message || 'Server Error!!!')
+		getEmployees: Observable<Employee[]>{
+			return this.http.get<Employee[]>(this._url)
+							.catch(this.errorHandler);
+		};
+		
+		errorHandler(error: HttpErrorResponse) {
+			return Observable.throw(error.message || 'Server Error!!!')
+		}
 	}
-}
 
 EmployeeComponent.ts
 --------------------
 
-ngOnInIt() {
-	this.employeeService.getEmployees()
-		.subscribe(data => this.employeeArr= data,
-					error => this.errorMsg= error);
-		
-}	
+	ngOnInIt() {
+		this.employeeService.getEmployees()
+			.subscribe(data => this.employeeArr = data,
+						error => this.errorMsg= error);
+			
+	}
 
 
 -------------------------------------------------------------------------------------
@@ -367,55 +489,55 @@ ngOnInIt() {
 Routing
 -------
 
-> ng new routing-example --routing
+	> ng new routing-example --routing
 
 app-routing-module.ts
 ---------------------
-Configure routes
+	Configure routes
 
-const routes: Routes= [
-	{path:'/', redirectTo: '/department', pathMatch: 'full'}, -> prefix, postfix, full match of url
-	{path:'employees', component: EmployeeComponent},
-	{path:'department', component: DeptComponent, children:[
-				{path:'IncomeTax', component: IncomeComponent},
-				{path: 'Industrial', component: IndustrialComponent}
-			]
-	},
-	{path:'/**', component: PageNotFoundComponent}
-]
+	const routes: Routes= [
+		{path:'/', redirectTo: '/department', pathMatch: 'full'}, -> prefix, postfix, full match of url
+		{path:'employees', component: EmployeeComponent},
+		{path:'department', component: DeptComponent, children:[
+					{path:'IncomeTax', component: IncomeComponent},
+					{path: 'Industrial', component: IndustrialComponent}
+				]
+		},
+		{path:'/**', component: PageNotFoundComponent}
+	]
 
-@NgModule({
-	imports: [RouterModule.forRoot(routes)],
-	exports: [RouterModule]
-});
+	@NgModule({
+		imports: [RouterModule.forRoot(routes)],
+		exports: [RouterModule]
+	});
 
-AppModule.ts
-------------
+	AppModule.ts
+	------------
 
-imports: [AppRoutingModule]
+	imports: [AppRoutingModule]
 
-AppComponent Template
----------------------
-<a routerLink="/employees" routerLinkActive="activeClass">Employees</a>
-<a routerLink="/department" routerLinkActive="activeClass">Department</a>
+	AppComponent Template
+	---------------------
+	<a routerLink="/employees" routerLinkActive="activeClass">Employees</a>
+	<a routerLink="/department" routerLinkActive="activeClass">Department</a>
 
-<router-outlet></router-outlet>
+	<router-outlet></router-outlet>
 
 -------------------------------------------------------------------------
 
 Routing with params
 -------------------
-{path:'department/:id', component: DeptDetailComponent}
+	{path:'department/:id', component: DeptDetailComponent}
 
 
 DepartmentComponent.ts
 ----------------------
 
-constructor(private router:Router){}
+	constructor(private router:Router){}
 
 When some dept is clicked
 -------------------------
-<li (click)= "onSelect(dept)" *ngFor="let dept of departments">{{dept.name}}</li>
+	<li (click)= "onSelect(dept)" *ngFor="let dept of departments">{{dept.name}}</li>
 
 onSelect(dept) {
 	this.router.navigate(["/department", dept.id]);
@@ -430,9 +552,9 @@ DeptDetailComponent.ts			-> Access the id from paramMap of route snapshot
 
 constructor(private activeRoute:ActivatedRoute){}
 
-ngOnInit() {		-> Init only once
-	this.deptId = parseInt(this.route.snapshot.paramMap.get('id'));
-}
+	ngOnInit() {		-> Init only once
+		this.deptId = parseInt(this.route.snapshot.paramMap.get('id'));
+	}
 
 ---------------------------------------------------------------------------
 
@@ -454,52 +576,52 @@ Now angular would know about the change and update the component template
 
 Optional Route Parameter
 ------------------------
-Passing the parameters to the route
+	Passing the parameters to the route
 
-goBackToDepartments() {
-	let selectedId = this.deptId ? this.deptId : null;
-	this.router.navigate(["/department", {'id': selectedId, 'name':'backToDept'}]);	-> Optional Parameters as an object
-}	
+	goBackToDepartments() {
+		let selectedId = this.deptId ? this.deptId : null;
+		this.router.navigate(["/department", {'id': selectedId, 'name':'backToDept'}]);	-> Optional Parameters as an object
+	}	
 
-Accessing rhe parameters is from route.snapshot.paramsMap
+	Accessing rhe parameters is from route.snapshot.paramsMap
 
 ---------------------------------------------------------------------------------
 
 Relative paths
 --------------
 
-Use relative paths incase ur paths may change in the future.
+	Use relative paths incase ur paths may change in the future.
 
-onSelect(dept) {
-	this.router.navigate([dept.id], {relativeTo: this.route}); -> relative to this route append dept.id
-}
+	onSelect(dept) {
+		this.router.navigate([dept.id], {relativeTo: this.route}); -> relative to this route append dept.id
+	}
 
 
-goBackToDepartments() {
-	let selectedId = this.deptId ? this.deptId : null;
-	this.router.navigate(["../", {'id': selectedId, 'name':'backToDept'}], {relativeTo: this.route});	
-}	
+	goBackToDepartments() {
+		let selectedId = this.deptId ? this.deptId : null;
+		this.router.navigate(["../", {'id': selectedId, 'name':'backToDept'}], {relativeTo: this.route});	
+	}	
 
 ------------------------------------------------------------------------------------
 
 Angular-FormsModule
 -------------------
 
-use form tag
+	use form tag
 
-use template reference variable on the form tag ex: userForm
+	use template reference variable on the form tag ex: userForm
 
-use ngModel for each form element that you want to capture data in the form
+	use ngModel for each form element that you want to capture data in the form
 
-for angular to capture each form element data use name attribute
+	for angular to capture each form element data use name attribute
 
-using the name attribute, angular will map for each element, the {name: value} pair to an object
+	using the name attribute, angular will map for each element, the {name: value} pair to an object
 
-use ngModelGroup="nameOfTheGroup" for capturing a group of elements as an object like address element contains state, city, pincode
-{name1:value1, name2:value2, ... ,"address": {"state":"", "city":""...}}
+	use ngModelGroup="nameOfTheGroup" for capturing a group of elements as an object like address element contains state, city, pincode
+	{name1:value1, name2:value2, ... ,"address": {"state":"", "city":""...}}
 
-we can view form elements info in the view using template reference variable we declared on form tag 
-{{userForm.value | json}} 
+	we can view form elements info in the view using template reference variable we declared on form tag 
+	{{userForm.value | json}} 
 
 -----------------------------------------------------------------------------
 for the form elements to be mapped to a model

@@ -31,3 +31,9 @@ mvn compile exec:java
 This instructs Maven to compile the source in the src directory and to 
 execute the FileCopierWithCamel class with the camel-core JAR on the
 classpath.
+
+Maven – Settings File
+----------------------
+
+Maven settings.xml file contains configurations that are not specific to a project, but are global in nature. 
+It also contains information that is not meant to be distributed (e.g. passwords).
