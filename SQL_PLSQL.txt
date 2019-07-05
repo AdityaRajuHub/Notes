@@ -136,6 +136,54 @@ where 2 = (
 
 ---------------------------------------------------------------------------------------------
 
+PL/SQL
+-------
+
+PL/SQL means instructing the compiler 'what to do' through SQL and 'how to do' through its procedural way.
+
+Architecture
+------------
+
+The PL/SQL architecture mainly consists of following three components:
+
+	1. PL/SQL block
+	2. PL/SQL Engine
+	3. Database Server
+	
+	1. PL/SQL block
+		Divide the code logically 
+			1. declarative section for declaring purpose, 
+			2. execution section for processing statements, 
+			3. exception handling section for handling errors
+		
+		Following are the different type of PL/SQL units.
+			Anonymous Block
+			Function
+			Library
+			Procedure
+			Package Body
+			Package Specification
+			Trigger
+			Type
+			Type Body
+			
+	2. PL/SQL Engine
+		It is where the actual processing of the code takes place
+		Separates the PL/SQL code from SQL code
+		Separated PL/SQL units will be handled by PL/SQL engine itself with "PL/SQL executor".
+		Sends the SQL code to Database Server where the SQL is executed
+		It can be installed in both database server and in the application server.
+	
+	3. Database Server
+		This is where the interaction with Database takes place.
+		The SQL received from engine is processed by "SQL executor" 
+			which parses the SQL and executes it.
+		
+		
+		
+
+---------------------------------------------------------------------------------------------
+
 Triggers:
 --------
 Triggers are stored programs that are fired automatically when some events occur. 

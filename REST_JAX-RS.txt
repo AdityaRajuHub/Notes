@@ -1,0 +1,339 @@
+REST	- Roy Fielding	- Http sepcifications
+----
+
+Representational State Transfer: is transferring the state of a resource over the internet to the client.
+		The state of a resource can be represented using XML/JSON format.
+
+	So when a browser requests a server for data, server responds with a web page. 
+	But what if an app requests data and it can't interpret a webpage
+		in that case we need to transer state in the form of XML/JSON
+
+
+SOAP 	- 	WSDL
+
+REST	- 	No Service Definition
+			No standards, rules
+			Hence the name RESTful
+			
+
+	Let's duug HTTP
+	
+	What is HyperText?
+	A.	Hyper Text is text which contains Hyper Links.
+		HyperLinks are links to other text. ex: HTML which contains anchor tags linking to other pages
+
+	(1) REST uses HTTP which uses Resource based URI's which contains Nouns not Verbs
+
+		1. Addresses: 			invokes an action on server to do something
+		
+		2. Resource based URI: 	lookup a resource at a location
+		
+			Ex: Weather website
+			
+			Address: 	weatherapp.com/weatherLookup.do?zipcode=12345
+			URI:		weatherapp.com/zipcode/12345
+		
+	(2) REST uses HTTP methods to lookup/alter a resource at a URI
+	
+		GET				/topics				Gets all topics 	- Idempotent
+		GET				/topics/id			Gets the topic 		- Idempotent
+		POST			/topics				Create new topic 	- Not Idempotent(creates mutiple resources)
+		PUT				/topics/id			Update the topic 	- Idempotent
+		DELETE			/topics/id			Delete the topic 	- Idempotent
+	
+		Idempotent		-	has the same effect even if invoked multiple times 		ex: count=100;
+		Not Idempotent	- 	affects multiple resources if invoked multiple times	ex: count=count+1;
+		
+	****So Resource creation should be done by POST, the browser issues a warning if you are invoking the request again.
+	
+	(3) REST uses HTTP status codes to know about the status of the request
+		
+		1xx	-	Informational
+		
+		2xx	- 	Successful responses
+				ex: 200 OK, 201 Created, 202 Accepted, 204 No content
+		
+		3xx	-	Redirection messages
+				ex: 301 Moved Permanently, 304 Not modified
+		
+		4xx	-	Client error responses
+				ex: 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found
+		
+		5xx	-	Server error responses
+				ex: 500 Internal Server Error, 502 Bad Gateway, 504 Gateway Timeout, 
+		
+		
+	(4) REST uses HTTP Headers for knowing about the message 
+		Headers contains Metadata.
+	
+		Http protocol 	1.1
+		Http method		GET/POST/PUT/DELETE
+		Content-Type:	text/xml, application/json
+		Message Length
+		Date		
+		
+	2 types of URI's
+		
+		1. Instance based URI			-	which means it returns a single instance of resource
+		2. Collection Resource URI		-	which means it returns a collection of resource instances.
+		
+		
+	1. Get all messages	-	Collection URI
+	
+		/messages
+	
+	2. Getting a message -	Instance URI	
+	
+		/messages/{messageId}
+		
+	3. Get all comments to a message -	Collection
+		
+		/messages/{messageId}/comments
+	
+		So /messages acts as a directory for all the comments for a message
+		
+		.../comments is a Collection URI 
+	
+	Filtering results	-	Query parameters
+	-----------------
+		
+		/messages?offset=30&limit=10
+		
+		/messages?year=2014&offset=30&limit=10
+
+
+	Http Methods
+	------------
+	
+		We can have same URI's for multiple operations
+		Using the right method we can perform the right operation
+		
+		/getProducts.do?id=10		->	GET /products/10
+		
+		/deleteProducts.do?id=10	->	DELETE /products/10
+		
+		
+	REST response
+	-------------
+	JSON / XML
+	
+	The advantage of JSON over XML is that JSON can be easily converted to a webpage using JSON object for human consumption.
+
+
+	HATEOAS
+	-------
+		Hypermedia as the Engine of Application State
+		
+		which means that hyper text is driving the client's interation with application.
+		
+		if user requests for a resource then the response could contain other resources uri's along with the actual resource.
+		
+		So the client developer need not hard code the uri's
+		
+		Request: 	GET	/api/messages/
+		Response:
+			[
+				{
+					"id": 10,
+					"name": "REST API",
+					"description": "Rest API by Roy Fielding",
+					"href": "/messages/10"
+					"likes-href"; "/api/messages/10/likes",
+					"comments-href": "/api/messages/10/comments",
+					"shares-href": "/api/messages/10/shares"
+				},
+				{
+					"id": 20,
+					"name": "Java",
+					"description": "Java Black Book",
+					"href": "/messages/20"
+					"likes-href"; "/api/messages/20/likes",
+					"comments-href": "/api/messages/20/comments",
+					"shares-href": "/api/messages/20/shares"
+				},
+				{
+					"id": 30,
+					"name": "Javascript",
+					"description": "Javascript is the future",
+					"href": "/messages/30"
+					"likes-href"; "/api/messages/30/likes",
+					"comments-href": "/api/messages/30/comments",
+					"shares-href": "/api/messages/30/shares"
+				}
+			]
+
+		Observe that each resource in the collection consists of href property 
+			which can be used to get that resource.
+			
+		This could be further improved by using "rel" attribute which is a HTTP attribute.
+
+			[
+				{
+					"id": 10,
+					"name": "REST API",
+					"description": "Rest API by Roy Fielding",
+					"links": [
+								{
+									"href": "/messages/10",
+									"rel": "self"
+								},
+								{
+									"href": "/api/messages/10/likes",
+									"rel": "likes"
+								},
+								{
+									"href": "/api/messages/10/comments",
+									"rel": "comments"
+								},
+								{
+									"href": "/api/messages/10/shares",
+									"rel": "shares"
+								}
+							]
+				}
+			]
+
+		With "rel" it is easy to find the resource that the client wants.
+
+	Richardson Maturity Model
+	---------------------------
+	
+		Tells us how well we have implemented RESTful WS
+		
+		1. Level 0	-	Swamp of POX (Plain Old XML)
+							It is when the request XML contains operation name and parameters
+							<create-request><id>10</id><name>Java</name></create-request>
+							
+		2. level 1	-	Resource URI
+		
+		3. Level 2	-	HTTP Methods + Resource URI
+		
+		4. Level 3	-	HATEOAS + HTTP Methods + Resource URI
+		
+	---------------------------------------------------------------------------------------------------
+	
+	Implementing REST API through JAX-RS (javax.ws.rs.*)
+	---------------------
+		
+		JAX-RS is the specification which is implemented by many libraries like Jersey, RESTEasy etc.
+		
+		The specifications contains annotations and interfaces which the libraries implement,
+			which means u can plugin any library u want and it will still work.
+		
+		Why Jersey?
+		----------
+			It is a reference implementation for JAX-RS.
+			
+		Maven archetype
+		---------------
+		Group Id:		org.glassfish.jersey.archetypes
+		Artifact Id: 	jersey-quickstart-webapp
+		Version:		2.14
+		
+		
+	Annotations:
+	-----------
+	
+	1. @Path									- 	class level and method level annotation
+	
+	2. @GET, @POST, @PUT, @DELETE				- 	place on method
+	
+	3. @Produces(MediaType.PLAIN_TEXT)			-	class and method level annotation
+													signifies response content type
+													JAXB does the conversion between Java POJO's and XML
+													We need to add the dependency jars for converting JSON and Java POJo
+													
+	4. @Consumes(MediaType.APPLICATION_JSON)	-	class and method level annotation 
+													signifies Request body content type
+	
+	4. @PathParam								- 	method level annotation for mmaping uri param with method parameters
+	
+	@Path("/messages/{messageId}")
+	
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
