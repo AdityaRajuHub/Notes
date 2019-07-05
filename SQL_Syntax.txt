@@ -134,12 +134,594 @@ where 2 = (
 		where emp2.salary >= emp1.salary
 )
 
+---------------------------------------------------------------------------------------------
+
 Triggers:
 --------
-Allow you to execute a batch of code upon insert, delete, update a specific table.
-1. Before/After insert
-2. Before/After update
-3. Before/After delete
+Triggers are stored programs that are fired automatically when some events occur. 
+Allow you to execute a batch of code upon insert, delete, update a specific object.
+
+Types of Triggers
+-----------------
+
+1. Classification based on the timing
+
+	BEFORE Trigger: It fires before the specified event has occurred.
+	AFTER Trigger: It fires after the specified event has occurred.
+	INSTEAD OF Trigger: A special type. You will learn more about the further topics. (only for DML )
+	
+2. Classification based on the level
+
+	STATEMENT level Trigger: It fires one time for the specified event statement.
+	ROW level Trigger: It fires for each record that got affected in the specified event. (only for DML)
+
+3. Classification based on the Event
+
+	DML Trigger: It fires when the DML event is specified (INSERT/UPDATE/DELETE)
+	DDL Trigger: It fires when the DDL event is specified (CREATE/ALTER)
+	DATABASE Trigger: It fires when the database event is specified (LOGON/LOGOFF/STARTUP/SHUTDOWN)
+
+Create Trigger
+--------------
+
+	CREATE/REPLACE TRIGGER <trigger_name>
+		[BEFORE | AFTER | INSTEAD OF]
+		
+		[INSERT | UPDATE | DELETE]
+		
+		ON <name of the underlying object>
+		
+		[FOR EACH ROW]
+		
+		[WHEN <condition for trigger to execute>]
+		
+		DECLARE
+			...
+		BEGIN
+			...
+		EXCEPTION
+			...
+		END;
+
+:NEW and :OLD Clause
+--------------------
+
+In a row level trigger, the trigger fires for each related row. And sometimes it is 
+	required to know the value before and after the DML statement.
+
+We can refer to old and new values inside the trigger body.
+
+			INSERT			UPDATE			DELETE
+			--------------------------------------
+	:NEW	VALID			VALID			INVALID. There is no new value in delete case.
+	:OLD	INVALID	    	VALID			VALID
+
+
+INSTEAD OF Trigger
+------------------
+
+"INSTEAD OF trigger" is the special type of trigger. It is used only in DML triggers. 
+It is used when any DML event is going to occur on the Complex VIEW (more than one table).
+
+Consider an example in which a view is made from 3 base tables. When any DML event is issued over this view, 
+	that will become invalid because the data is taken from 3 different tables. So in this INSTEAD OF trigger is used. 
+	The INSTEAD OF trigger is used to modify the base tables directly instead of modifying the view for the given event.
+	
+	
+For example:
+
+	CREATE VIEW guru99_emp_view(
+		Employee_name:dept_name,location) AS
+		SELECT emp.emp_name,dept.dept_name,dept.location
+		FROM emp, dept
+		WHERE emp.dept_no=dept.dept_no;
+
+
+	BEGIN
+		UPDATE guru99_emp_view SET location='FRANCE' WHERE employee_name=:'XXX’;
+		COMMIT;
+	END;
+
+	ERROR: ORA 01779: cannot modify a column which maps to a non-key preserved table
+	
+	create trigger viewUpdateTrigger
+		instead of update 
+		on guru99_emp_view
+		for each row
+		begin
+			update dept set location=:new.location 
+				where dept_name=:old.dept_name;
+		end;
+		/
+	
+	
+----------------------------------------------------------------------
+
+Data Types
+----------
+	Charater datatype
+	
+	1. CHAR 	-	This data type stores the string value, and the size of the string is fixed at the time of declaring the variable.
+					ex: manager CHAR (10):= 'guru99';
+					
+	2. VARCHAR2	-	This data type stores the string, but the length of the string is not fixed. 
+					Size restriction: 1-4000 bytes for table column size and 1-32767 bytes for variables.
+					ex: manager VARCHAR2(10) := ‘guru99';	--Oracle will allocate memory of only 6 bytes
+	
+	3. LONG 	-	Used to store large text upto 2GB.
+					Not recommended instead LOB data type should be preferred.
+	
+	4. LONG RAW	-	Accepts media objects, images, etc. upto 2 GB.
+	
+	NUMBER Data Type	- 	stores fixed or floating point numbers up to 38 digits of precision
+	----------------
+						ex:	A NUMBER(8,2);	-- 6 digits before and 2 digits after decimal point
+							B NUMBER(8);	-- 8 digits and no decimal digits
+							C NUMBER;		-- It can take up to a maximum of 38 digits.
+	
+	BOOLEAN Data Type	-	stores the logical values. 
+	-----------------		It represents either TRUE or FALSE and mainly used in conditional statements. 
+	
+	DATE Data Type		-	standard Oracle time format for input and output is 'DD-MON-YY'
+	--------------			ex: newyear DATE := '01-JAN-2015';
+								current_date DATE := SYSDATE;
+	
+	LOB Data Type		- 	store and manipulate large blocks of unstructured data's like images, multimedia files, etc.
+	-------------
+	Following are the different LOB data types. They can store up to the size of 128 terabytes.
+
+		1. BLOB			-> 	binary file format
+		2. CLOB 		-> 	stores the LOB data into the character set	
+		3. BFILE		-> 	stores the unstructured binary format data outside the database as an operating-system file.
+	
+	
+
+Records Type
+------------
+
+A Record type is a complex data type which allows the programmer to create a new data type with the desired column structure.
+It groups one or more column to form a new data type. These columns will have its own name and data type.
+A Record type can accept the data as a single record that consists of many columns 
+	OR
+It can accept the value for one particular column of a record
+
+it will be stored as a new data type in the database and the same shall be used to declare a variable in programs.
+
+It can be created at "database level" or at the "subprogram levels".
+
+At "database level" it will be created as a database object.
+
+Column access: <record_type_variable_name>.<column_name>
+	
+Syntax:
+-------
+	CREATE TYPE <type_name_db> IS RECORD
+	(
+		<column 1> <datatype>,
+		<column 2> <datatype>,
+		<column 3> <datatype>,
+		...
+	);
+	
+	
+Collections: Varrays, Nested & Index by Tables
+----------------------------------------------
+	A Collection is an ordered group of elements of particular data types. 
+	It can be a collection of simple data type or complex data type (like user-defined or record types).
+
+	In the collection, each element is identified by a term called "subscript." or "index"
+	
+	Collections are most useful things when a large data of the same type need to be processed or manipulated. 
+	Collections can be populated and manipulated as whole using 'BULK' option in Oracle.
+
+	Collections are classified based on the Structure, Subscript, Storage
+		
+		1. Varrays			-> Just like Normal array
+				Fixed in length, continuos allocation of memory(dense) starting with subscript 1.
+				We cannot delete any array elements. Varray can be deleted as a whole, or it can be trimmed from the end.
+				Array size should be known in advance.
+				Need to be initialized before using them in programs.
+				Can be created as a database object, which is visible throughout the database or inside the subprogram.
+				
+				Syntax: TYPE <type_name> IS VARRAY (<SIZE>) OF <DATA_TYPE>;
+				
+		2. Nested tables	-> Collection is stored as a system generated db table hence the name
+				Size of the array is not fixed and has no upper size limit which can be of both dense and sparse.
+				We can delete elements from the middle or randomly from any subscript.
+				Memory needs to be extended each time before we use it. We can extend the collection using 'EXTEND' keyword.
+				It can be used in the select query to fetch the values since it stored as DB table.
+				Need to be initialized before using them in programs.
+				Can be created as a database object, which is visible throughout the database or inside the subprogram
+				
+				Syntax: TYPE <tvpe name> IS TABLE OF <DATA TYPE>;
+				
+		3. Index-by-tables	-> the index or subscript is user-defined, hence the name
+				Size is not fixed, always sparse in nature ie. not stored sequentially
+				Subscript can of integer or strings. At the time of creating the collection, 
+					the subscript type should be mentioned.
+				Cannot be created as a database object. It can only be created inside the subprogram
+				BULK COLLECT cannot be used since subscript shd be given explicitly.
+				
+				Syntax: TYPE <type_name> IS TABLE OF <DATA_TYPE> INDEX BY VARCHAR2 (10);
+		
+Constructor and Initialization Concept in Collections
+-----------------------------------------------------
+
+Constructors are the in-built function provided by the oracle that has the same name as of the object or collections. 
+
+	1. For collections, these constructors should be called explicitly to initialize it.
+	2. Both Varray and Nested tables need to be initialized through these constructors before getting referred into the program.
+	3. Constructor implicitly extends the memory allocation for a collection (except Varray), 
+		hence constructor can also assign the variables to the collections.
+	4. Assigning values to the collection through constructors will never make the collection sparse.
+	
+	
+	Collection Methods
+	------------------
+	
+	
+	EXISTS (n)			This method will return Boolean results. It will return 'TRUE' if the nth element exists in that collection, 
+							else it will return FALSE. Only EXISTS functions can be used in uninitialized collection	
+																									
+	COUNT				Gives the total count of the elements present in a collection						
+	LIMIT				It returns the maximum size of the collection. For Varray, it will return the fixed size that has been defined. 
+							For Nested table and Index-by-table, it gives NULL	
+	FIRST				Returns the value of the first index variable(subscript) of the collections	
+	LAST				Returns the value of the last index variable(subscript) of the collections	
+	PRIOR (n)			Returns precedes index variable in a collection of the nth element. If there is no precedes index value NULL is returned
+	NEXT (n)			Returns succeeds index variable in a collection of the nth element. If there is no succeeds index value NULL is returned
+	EXTEND				Extends one element in a collection at the end
+	EXTEND (n)			Extends n elements at the end of a collection
+	EXTEND(n,i)			Extends n copies of the ith element at the end of the collection
+	TRIM				Removes one element from the end of the collection
+	TRIM (n)			Removes n elements from the end of collection
+	DELETE				Deletes all the elements from the collection. Makes the collection empty
+	DELETE (n)			Deletes the nth element from the collection. If the nth element is NULL, then this will do nothing
+	DELETE (m,n)		Deletes the element in the range mth to nth in the collection
+	
+	
+
+
+
+
+
+-----------------------------------------------------------------------------------
+
+Stored Procedure & Functions
+----------------------------
+
+Procedures and Functions are the subprograms which can be created and saved in the database as database objects. 
+They can be called or referred inside the other blocks also.
+
+Parameter Types
+
+	1. IN		-> default type input read-only variable
+	2. OUT		-> output read-write variable, output will be set to the calling statement's variable.
+	3. INOUT	-> read-write variable works as both input and output will be set to the caller's variable
+					when this subprogram returns
+					
+Procedure
+---------
+	1. A Procedure is a subprogram unit that consists of a group of PL/SQL statements.
+	2. This subprogram unit is stored as a database object with unique name.
+	3. Procedure can have a RETURN statement to return the control to the calling block, 
+		but it cannot return any values through the RETURN statement.
+	4. Procedures cannot be called directly from SELECT statements. 
+		They can be called from another block or through EXEC keyword.
+		
+	Syntax:
+	------
+		CREATE OR REPLACE PROCEDURE <procedure_name>
+		(
+			<parameterl IN/OUT <datatype>
+			..
+			.
+		)
+		[ IS | AS ]				--when the proc is nested in some other block say Package then IS; 
+			<declaration_part>	--if standalone then AS;
+		BEGIN
+			<execution part>
+		EXCEPTION
+			<exception handling part>
+		END;
+
+Functions
+---------
+	1. The only difference between proc and func is that func must return a value.
+	2. A Function should either return a value or raise the exception, i.e. return is mandatory in functions.
+	3. Function with no DML statements can be directly called in SELECT query whereas 
+		the function with DML operation can only be called from other PL/SQL blocks.
+	4. It contains declaration part (optional), execution part, exception handling part (optional).
+	5. Function can also return the value through OUT parameters other than using RETURN.
+	6. In calling statement it always accompanies with assignment operator to populate the variables.
+	
+	Syntax:
+	------
+	
+	CREATE OR REPLACE FUNCTION 
+		<procedure_name>
+		(
+		<parameterl IN/OUT <datatype>
+		)
+		RETURN <datatype>
+		[ IS | AS ]
+		<declaration_part>
+		BEGIN
+		<execution part> 
+		EXCEPTION
+		<exception handling part>
+		END;
+
+Built-in functions
+------------------
+	Conversion Functions
+	--------------------
+		1. to_char					
+				ex: to_char(123)
+				
+		2. to_date(text, format)
+				ex: TO_DATE('2015-JAN-15', 'YYYY-MON-DD');
+				
+		3. to_number(text, format)
+				ex: TO_NUMBER('1234','9999')			-> 1234
+					TO_NUMBER('1,234.45','9,999.99') 	-> 1234
+
+	String Functions
+	----------------
+		1. INSTR (text, string, start, occurance)	Gives the position of particular string in the given text.
+							Select INSTR('AEROPLANE','E',2,1) from dual 
+							INSTR('AEROPLANE','E',2,2) Output: 2 
+							INSTR('AEROPLANE','E',2,2) Output: 9 (2nd occurance of E)
+		
+		2. SUBSTR ( text, start, length)			Gives the substring value of the main string.
+		
+		3. UPPER(text)
+		4. LOWER(text)
+		5. INITCAP(text) first letter capitalized
+		6. LENGTH(text)
+		7. LTRIM(text) - trim leading white spaces
+		8. RTRIM(text) - trim trailing white spaces
+		9. RPAD (text, length, pad_char)	apply padding to the right side if the text with the pad_char length times.
+											RPAD('guru99',10,'-') 	->  guru99----
+		10. LPAD(text, length, pad_char)
+
+	DATE functions
+	--------------
+		1. ADD_MONTHS(date, no.of months)	Adds the given months to the date
+		2. SYSDATE
+		3. TRUNC			Round of the date variable to the lower possible value
+		4. ROUND			Rounds the date to the nearest limit either higher or lower
+		5. MONTHS_BETWEEN	Returns the number of months between two dates
+
+
+
+
+Cursors
+-------
+
+A cursor is a pointer to a private SQL area called context area that stores information about the processing of a 
+SELECT or DML statements like INSERT, UPDATE, DELETE or MERGE.
+The set of rows the cursor holds is referred as active set.
+These cursors can also be named so that they can be referred from another place of the code.
+
+Cursor is a mechanism which facilitates you to assign a name to a SELECT statement and 
+manipulate the information within that SQL statement.
+
+The cursor is of two types.
+
+	1. Implicit Cursor
+	2. Explicit Cursor
+
+Implicit Cursor
+	Whenever any DML operations occur in the database, an implicit cursor is created that holds the rows affected, in that particular operation. 
+	These cursors cannot be named and, hence they cannot be controlled or referred from another place of the code. 
+	We can refer only to the most recent cursor through the cursor attributes.
+
+Explicit Cursor
+	Programmers are allowed to create named context area to execute their DML operations to get more control over it. 
+	The explicit cursor should be defined in the declaration section of the PL/SQL block, and 
+	it is created for the 'SELECT' statement that needs to be used in the code.
+
+Below are steps that involved in working with explicit cursors.
+
+	Declaring the cursor
+		Declaring the cursor simply means to create one named context area for the 'SELECT' statement that is defined in the declaration part. 
+		The name of this context area is same as the cursor name.
+
+	Opening Cursor
+		Opening the cursor will instruct the PL/SQL to allocate the memory for this cursor. It will make the cursor ready to fetch the records.
+
+	Fetching Data from the Cursor
+		In this process, the 'SELECT' statement is executed and the rows fetched is stored in the allocated memory. 
+		These are now called as active sets. Fetching data from the cursor is a record-level activity 
+			that means we can access the data in a record-by-record way.
+		Each fetch statement will fetch one active set and holds the information of that particular record. 
+		This statement is same as 'SELECT' statement that fetches the record and assigns to the variable in the 'INTO' clause, 
+			but it will not throw any exceptions.
+
+	Closing the Cursor
+		Once all the record is fetched now, we need to close the cursor so that the memory allocated to this context area will be released.	
+
+Syntax
+------
+
+DECLARE
+CURSOR <cursor_name> IS <SELECT statement^>
+<cursor_variable declaration>
+BEGIN
+OPEN <cursor_name>;
+FETCH <cursor_name> INTO <cursor_variable>;
+.
+.
+CLOSE <cursor_name>;
+END;
+
+Cursor Attributes
+-----------------
+Both Implicit cursor and the explicit cursor have the below attributes that can be accessed.
+
+	Cursor Attribute	Description
+
+	%FOUND				It returns the Boolean result 'TRUE' if the most recent fetch operation fetched a record successfully, else it will return FALSE.
+
+	%NOTFOUND			This works oppositely to %FOUND it will return 'TRUE' if the most recent fetch operation could not able to fetch any record.
+
+	%ISOPEN				It returns Boolean result 'TRUE' if the given cursor is already opened, else it returns 'FALSE'
+
+	%ROWCOUNT			It returns the numerical value. It gives the actual count of records that got affected by the DML activity.
+
+
+Example:
+
+	DECLARE
+	CURSOR guru99_det IS SELECT emp_name FROM emp;
+	lv_emp_name emp.emp_name%type;
+
+	BEGIN
+	OPEN guru99_det;
+
+	LOOP
+		FETCH guru99_det INTO lv_emp_name;
+		IF guru99_det%NOTFOUND
+		THEN
+			EXIT;
+		END IF;
+			Dbms_output.put_line(‘Employee Fetched:‘||lv_emp_name);
+		END LOOP;
+			Dbms_output.put_line(‘Total rows fetched is‘||guru99_det%R0WCOUNT);
+		CLOSE guru99_det;
+	END:
+	/
+
+-----------------------------------------------------------------------------
+
+FOR Loop Cursor statement (instead of OPEN, FETCH, checking for %NOTFOUND)
+-------------------------
+
+"FOR LOOP" statement can be used for working with cursors. 
+
+We can give the cursor name instead of range limit in the FOR loop statement so that the loop will work 
+	from the first record of the cursor to the last record of the cursor. 
+
+The cursor variable, opening of cursor, fetching and closing of the cursor will be done implicitly by the FOR loop.
+
+Syntax:
+------
+	CURSOR <cursor_name> IS <SELECT statement>;
+	BEGIN
+	  FOR I IN <cursor_name>		->  'I' will behave as cursor variable in this case.
+	  LOOP
+	  .
+	  .
+	  END LOOP;
+	END;
+	
+
+Example:
+
+		DECLARE
+			CURSOR guru99_det IS SELECT emp_name FROM emp; 
+		BEGIN
+			FOR lv_emp_name IN guru99_det
+			LOOP
+				Dbms_output.put_line(‘Employee Fetched:‘||lv_emp_name);
+			END LOOP;
+		END;
+		/
+
+Note: In Cursor-FOR loop, cursor attributes cannot be used since opening, 
+		fetching and closing of the cursor is done implicitly by FOR loop.
+
+--------------------------------------------------------------------------------------------------------------
+
+BULK COLLECT
+-------------
+
+BULK COLLECT reduces context switches between SQL and PL/SQL engine and allows SQL engine to fetch the records at once.
+
+Rather than fetching records one-by-one, BULK COLLECT can be used in 'SELECT' statement 
+	to populate the records in bulk or in fetching the cursor in bulk. 
+
+Since the BULK COLLECT fetches the record in BULK, the INTO clause should always contain a collection type variable. 
+
+The main advantage of using BULK COLLECT is it increases the performance by reducing the interaction between database and PL/SQL engine.
+
+Syntax:
+
+	1. SELECT <columnl> BULK COLLECT INTO bulk_varaible FROM <table name>;
+
+	2. FETCH <cursor_name> BULK COLLECT INTO <bulk_varaible >;
+	
+	Note: bulk_variable here needs to be a collection type.
+	
+FORALL Clause
+-------------
+
+	The FORALL allows to perform the DML operations on data in bulk.
+	
+	FOR loop statement -> record level
+	FORALL -> no loop concept, the entire data present in the given range is processed at the same time.
+	
+	Syntax:
+	------
+		FORALL <loop_variable> IN <lower range> .. <higher range> 
+
+		<DML operations>;
+
+LIMIT Clause
+------------
+
+	The bulk collect concept loads the entire data into the target collection variable as a bulk 
+		i.e. the whole data will be populated into the collection variable in a single-go. 
+	But this is not advisable when the total record that needs to be loaded is very large, 
+		because when PL/SQL tries to load the entire data it consumes more session memory. 
+	Hence, it is always good to limit the size of this bulk collect operation.
+
+	ROWNUM in SELECT statement can do the same thing but in CURSOR it is not possible.
+	To overcome this overhead,
+	
+	'LIMIT' clause defines the number of records that needs to be included in the bulk.
+
+	Syntax:
+	-------
+
+		FETCH <cursor_name> BULK COLLECT INTO <bulk_var> LIMIT <size>;
+	
+	Attributes
+	----------
+	
+		%BULK_ROWCOUNT(n)	-> # of rows affected in the nth DML statement of the FORALL statement
+								i.e. it will give the count of records affected in the FORALL statement 
+									for every single value from the collection variable. 
+								The term 'n' indicates the sequence of value in the collection, 
+									for which the row count is needed.
+
+
+Example:
+-------
+Project all the employee name from emp table using BULK COLLECT and increase the salary of all the employees by 5000 using FORALL.
+
+	DECLARE
+		
+		CURSOR emp_cur IS SELECT emp_name from emp;
+		TYPE lv_emp_name_table is TABLE OF emp.emp_name%type;	-- array type declaration
+		lv_emp_name		lv_emp_name_table;						-- var of type array of emp_name's
+	BEGIN
+		
+		FETCH emp_cur BULK COLLECT INTO lv_emp_name;
+		
+		FORALL i IN lv_emp_name.FIRST..lv_emp_name.LAST
+			UPDATE emp set salary= salary+5000 where emp_name= lv_emp_name(i);
+		
+		COMMIT;
+		
+		CLOSE emp_cur;
+	END;
+	
+	
+---------------------------------------------------------------------------------------------------
+
+
 
 
 
