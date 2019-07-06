@@ -20,17 +20,17 @@ History
 	Now, even on server side is dismantled and each module can be placed on different server while
 	each module exchanges data with the other. These modules are microservices.
 	
-	Microservices vs Monolith Architecture
+	Microservices vs Monolithic Architecture
 	
-	1. In contrast to microservices, the monolithic architecture means the code’s components are designed to work together, 
-		as one cohesive unit, sharing the same memory space. 
-	
-	2. The software built using a monolith approach is self-contained; its components are interconnected and interdependent. 
-	3. If developers want to make any changes or updates to a monolith system, they need to build and deploy the entire stack at once. 
-	4. It’s the same thing with scalability: the entire system, not just the modules in it, is scaled together. 
-	5. With the monolithic architecture it can be difficult to adopt a new technology stack, and in case you want to use a new platform or framework, 
-		you’ll have to rewrite the entire solution. Ouch.
-	
+		1. In contrast to microservices, the monolithic architecture means the code’s components are designed to work together, 
+			as one cohesive unit, sharing the same memory space. 
+		
+		2. The software built using a monolith approach is self-contained; its components are interconnected and interdependent. 
+		3. If developers want to make any changes or updates to a monolith system, they need to build and deploy the entire stack at once. 
+		4. It’s the same thing with scalability: the entire system, not just the modules in it, is scaled together. 
+		5. With the monolithic architecture it can be difficult to adopt a new technology stack, and in case you want to use a new platform or framework, 
+			you’ll have to rewrite the entire solution. Ouch.
+		
 	Advantages:
 	----------
 		1. Easier to Build and Maintain Apps
