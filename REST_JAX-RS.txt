@@ -1,4 +1,5 @@
-REST	- Roy Fielding	- Http sepcifications
+
+REST	- Roy Fielding	- also author of Http specifications
 ----
 
 Representational State Transfer: is transferring the state of a resource over the internet to the client.
@@ -230,6 +231,29 @@ REST	- 	No Service Definition
 		Artifact Id: 	jersey-quickstart-webapp
 		Version:		2.14
 		
+			> mvn archetype:generate -DarchetypeGroupId=org.glassfish.jersey.archetypes -DarchetypeArtifactId=jersey-quickstart-webapp
+		
+		You can generate an Eclipse project from your Maven project by running
+
+			> mvn eclipse:eclipse
+		
+		A project will be generated with the following web.xml
+		
+		<web-app>
+			<servlet>
+				<servlet-name>Jersey Web Application</servlet-name>
+				<servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+				<init-param>
+					<param-name>jersey.config.server.provider.packages</param-name>			-> the packages which contain the REST resource handlers
+					<param-value>com.example.demo</param-value>
+				</init-param>
+				<load-on-startup>1</load-on-startup>
+			</servlet>
+			<servlet-mapping>
+				<servlet-name>Jersey Web Application</servlet-name>
+				<url-pattern>/webapi/*</url-pattern>
+			</servlet-mapping>
+		</web-app>
 		
 	Annotations:
 	-----------
@@ -246,13 +270,24 @@ REST	- 	No Service Definition
 	4. @Consumes(MediaType.APPLICATION_JSON)	-	class and method level annotation 
 													signifies Request body content type
 	
-	4. @PathParam								- 	method level annotation for maping uri param with method parameters
-		
+	4. @PathParam								- 	field and method level annotation for maping uri param with method parameters
+													field level annotation doesn't work for @Singleton resources
 		URI: /messages/1
-		@Path("/messages/{messageId}")
-		public List<message> getMessage(@PathParam("messageId") String msgId) {...}
 		
-	5. @QueryParam								-	method level annotation for mapping query parameters with method params
+		ex: 1
+			@Path(/{profileId}/messages)
+			public class MessageResource {
+				
+				@PathParam private long profileId;
+				...
+			}
+			
+		ex: 2 
+			@Path("/messages/{messageId}")
+			public List<message> getMessage(@PathParam("messageId") String msgId) {...}
+		
+	5. @QueryParam								-	field and method level annotation for mapping query parameters with method params
+													field level annotation doesn't work for @Singleton resources
 													Implement pagination using QueryParam
 		URI: /messages?year=2014
 		@Path("/messages")
@@ -493,22 +528,132 @@ REST	- 	No Service Definition
 			This header is used to inform Server what content is being delivered in request body.
 			
 			Server is going to take HttpMethod + HttpPath + Consumes as a key and search for the method which serves this request
+
+----------------------------------------------------------------------------------------------------------------------------------------			
 			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
+Advance JAX-RS
+--------------
+
+Other way of writing a Jersey REST API instead of configuring web.xml is to have a main concrete class extend javax.ws.rs.core.Application
+	which is a abstract class. In this way automatically it picks those classes having @Path annotation to be resource handlers of Jersey.
 	
+		@ApplicationPath("webapi")
+		public class MyRestApp extends Application {
+		
+			...
+		}
+	
+	Application abstract class contains a method 
+		
+		Set<Class<?>> getClasses() 
+			It may be used to return only those classes which are resource handlers.
+			
+			
+		@Singleton	-		All resource handler classes are having default scope as request. 
+							So after the request is served the instance will be destroyed.
+							If we want to make it singleton then just annotate it with 
+			
+			
+			
+	What if Path param is a custom datatype?
+	---------------------------------------
+			
+		For primitives Jersey automatically converts from String to the particular primitive,
+			but if we have custom type as an argument then there would be a ModelValidationException
+			Error: No injection resource found for a parameter of type OurCustomType
+			
+			@Path({whichDate}/date)
+			public MyDate getMyDate(@PathParam("whichDate") MyDate date) {	-> whichDate is a string possible values 
+																				("today", "tomorrow", "yesterday")
+			}
+			
+			public class MyDate {
+				private int date;
+				private int month;
+				private int year;
+				//setters/getters
+				...
+			}
+			
+		We can make this conversion happen by implementing ParamConverter 
+			and let Jersey know how to do the conversion
+		
+		It contains a method that we need to implement
+			
+			T fromString(String value);
+			
+		Next we need to implement another interface ParamConverterProvider
+			which Jersey invokes to check the available converters. So we need to register our converter.
+			
+			<T> ParamConverter getConverter(Class<T> rawType, Type genericType, Annotation[] annotations)
+			
+			
+		Let's implement the converter for MyDate
+		
+		@Provider
+		public class MyDateConverterProvider implements ParamConverterProvider {
+		
+			<T> ParamConverter getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
+			
+				if(rawType.getName().equals(MyDate.class.getName())) {
+					
+					return new ParamConverter<T>() {
+						
+						@Override
+						T fromString(String value) {
+							
+							Calender requestedDate = Calender.getInstance();
+						
+							if(value.equals("tomorrow")) {
+								requestedDate.add(Calender.DATE, 1);
+							}
+							else if(value.equals("tomorrow")) {
+								requestedDate.substract(Calender.DATE, 1);
+							}
+							
+							MyDate myDate= new MyDate();
+							
+							myDate.setDate(requestedDate.get(Calender.DATE));
+							myDate.setMonth(requestedDate.get(Calender.MONTH));
+							myDate.setYear(requestedDate.get(Calender.YEAR));
+							
+							return rawType.cast(myDate);
+						}
+					}
+				}
+			}
+		}
 	
 		
+	MessageBodyReader and MessageBodyWriter
+	---------------------------------------
+	
+		Responsible for converting request body into a specific Object and vice versa.
+		Automatic conversion happens between JSON, XML to Objects and vice versa since the converters are on the classpath.
 		
+		But if we were to return TEXT/PLAIN Content-Type and return a Date object from the method then it would throw an exception.
 		
+		MessageBodyWriter Not found for media type=text/plain, type= class java.util.Date
+		
+		We need to implement MessageBodyWriter to make this work
+		
+			@Provider
+			@Produces(MediaType.TEXT_PLAIN)
+			public class DateMessageBodyWriter implements MessageBodyWriter<Date> {
+			
+				@Override
+				public void writeTo(Date date,
+					Class<?> type,
+					Type type,
+					Annotations[] ann,
+					MediaTypes mt,
+					MultiValuedMap<String, Object> mvm,
+					OutputStream out) throws IOException, WebApplicationException {
+					
+					out.write(date.toString().getBytes());
+				}
+				)
+			}
 		
 		
 		
