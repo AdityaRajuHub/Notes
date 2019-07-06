@@ -246,14 +246,266 @@ REST	- 	No Service Definition
 	4. @Consumes(MediaType.APPLICATION_JSON)	-	class and method level annotation 
 													signifies Request body content type
 	
-	4. @PathParam								- 	method level annotation for mmaping uri param with method parameters
+	4. @PathParam								- 	method level annotation for maping uri param with method parameters
+		
+		URI: /messages/1
+		@Path("/messages/{messageId}")
+		public List<message> getMessage(@PathParam("messageId") String msgId) {...}
+		
+	5. @QueryParam								-	method level annotation for mapping query parameters with method params
+													Implement pagination using QueryParam
+		URI: /messages?year=2014
+		@Path("/messages")
+		public List<message> getMessage(@QueryParam("year") int year) {...}
+		
+	6. @MatrixParam								-	method level annotation
+		
+		URI: /messages;year=2014
+		
+		Diff between @MatrixParam and @QueryParam
+		-----------------------------------------
+		The @MatrixParam annotation will apply to particular Resource present in URL and  @QueryParam will apply to whole Request URL.
+			
+			ex: /inventory/grocery;type=fruits/price;range=300/?limit=10 -	In this URI the params can be placed in between the uri
+				First Matrix Param type=fruits is applying to only grocery resource same range=300 is applying to only price resource 
+				but Query Param for pagination limit=10 is applying to whole Request URL. And yes, If only query parameters were used, 
+				you would end up with parameters like "grocery_type" and "grocery_price" and you would lose the clarity added by the 
+				locality of the parameters within the request.
+		
+		
+		
+	7. @HeaderParam 							-	extracts information from the HTTP headers. 
+													can extract any custom header set in the HTTP Request Header.
 	
-	@Path("/messages/{messageId}")
+	8. @CookieParam 							-	extracts information from the cookies declared in cookie related HTTP headers.
 	
+	9. @Context					 				-	to inject 12 object instances related to the context of HTTP requests.
+													same as @Inject
+													ex:
+													public String getParamsUsingContext(@Context UriInfo uriInfo, @Context HttpHeaders headers) {...}
+													
+		The object instances that it can inject are the following:
+
+			1. SecurityContext 		– Security context instance for the current HTTP request
+			2. Request 				– Used for setting precondition request processing
+			3. Application, Configuration, and Providers -> Provide access to the JAX-RS application, configuration, and providers instances
+			4. ResourceContext 		– Resource context class instances
+			5. ServletConfig 		– The ServletConfig instance instance
+			6. ServletContext 		– The ServletContext instance
+			7. HttpServletRequest 	– The HttpServletRequest instance for the current request
+			8. HttpServletResponse 	– The HttpServletResponse instance for the current request
+			9. HttpHeaders 			– Maintains the HTTP header keys and values
+			10. UriInfo 			– Query parameters and path variables from the URI called
 		
 		
+	10. @BeanParam								-	used when there are lot of annotated method parameters then u can move them to a POJO
+													and create a parameter of POJO as method argument.
+													public String getMessages(@BeanParam MessageFilterBean filterBean) {...}
+													public class MessageFilterBean{
+														@QueryParam private int year;
+														@QueryParam private int initial;
+														@QueryParam private int size;
+														//setters and getters
+													}
+	
+	SubResources
+	------------
+		A resource within a resource is a subresource.
+			ex: comments, likes, shares within a message.
 		
+		We don't want to have subresources in the main resource itself.
+		You have to delegate the request to a subresource.
+		The path for the subresource is going to be the remainder path of uri left over by parent resource before
+			delegating to the subresource.
+		Subresource can access the parent resource Path parameters as well.
 		
+		Ex: /messages/3/comments
+		
+			@Path("/messages")
+			class MessageResource {
+				
+				...
+				
+				@Path("{messageId}/comments")
+				public CommentResource getCommentResource() {
+					return new CommentResource();
+				}
+			}
+			
+			@Path("/")
+			class CommentResource {
+				
+				@GET
+				public List<Comment> getComments(@PathParam("messageId") long msgId) {
+					...
+				}
+				
+				@GET
+				@Path("/{commentId}")
+				public List<Comment> getComments(@PathParam("messageId") long msgId, @PathParam("commentId") long cmtId) {
+					...
+				}
+	
+			}
+	
+	Setting Response status codes
+	-----------------------------
+	
+	To return a status code of 201 Created for new resource creation, and returning the resource in body.
+		
+		Response.status(Status.CREATED)
+				.entity(newResource)
+				.build();
+	
+	To return the above and URI for new resource
+	
+		Response.created(URI uri)	-> URI can be constructed using hardcoding new URI("/resources/"+newResource.getId())
+				.entity(newResource)
+				.build();
+		
+		Instead of hardcoding the URI we can also get path from URIInfo of Context and then append new Id.
+		
+			uriInfo.getAbsolutePathBuilder().path(newResource.getId()).build();
+				
+	
+	Handling Exceptions
+	-------------------
+		1. To handle DataNotFoundException thrown in our code we need to implement below Mapper to send response 
+			instead of Tomcat generated Error Response Html
+		
+			@Provider		-> register the below class with JAX-RS
+			public class DataNotFoundExceptionMapper implements ExceptionMapper<DataNotFoundException> {
+			
+				@Override
+				public Response toResponse(DataNotFoundException ex) {
+				
+					return Response.status(Status.NOT_FOUND)
+									.entity(new ErrorMessage(ex.getMessage(), 404, "link to documentation"))
+									.build();
+				}
+			}	
+	
+		2. To Handle any Exception from being handled by Tomcat then we need to handle Throwable which is the super class
+		
+			@Provider		-> register the below class with JAX-RS
+			public class GenericExceptionMapper implements ExceptionMapper<Throwable> {
+				@Override
+				public Response toResponse(Throwable ex) {
+				
+					return Response.status(Status.INTERNAL_SERVER_ERROR)
+									.entity(new ErrorMessage(ex.getMessage(), 500, "link to documentation"))
+									.build();
+				}
+			}
+		
+		(OR)
+		
+		3. Jersey already registered one Exception for us WebApplicationException which we can use
+		
+			public Comment getComment(long msgId, long commnetId) {
+			
+				Message message= messageService.getMessage(msgId);
+				if(message==null)
+					throw new WebApplicationException(Response.status(Status.NOT_FOUND)
+									.entity(new ErrorMessage("Message not found", 404, "link to documentation"))
+									.build());
+				
+				Comment comment= message.getComments(commentId);
+				if(comment==null)
+					throw new WebApplicationException(Response.status(Status.NOT_FOUND)
+									.entity(new ErrorMessage("Comment not found", 404, "link to documentation"))
+									.build());
+			}
+	
+		javax.ws.rs.WebApplicationException (extends RunTimeException extends Exception extends Throwable extends Object) 
+			contains some subclasses
+		
+			1. ClientErrorException	-	4xx
+				Subclasses: BadRequestException, ForbiddenException, NotAcceptableException, NotAllowedException, 
+							NotAuthorizedException, NotFoundException, NotSupportedException
+							
+			2. RedirectionException	-	3xx
+				Subclasses: -
+				
+			3. ServerErrorException	-	5xx
+				Subclasses: InternalServerErrorException, ServiceUnavailableException
+
+			
+	HATEOAS
+	-------
+	
+		How to implement HATEOAS?
+		Simply add a links property in every resource u send as a response.
+		Links property is an list of all subresources
+		
+		@GET
+		@Path("{messageId}")
+		public Message getMessage(@PathParam long messageId) {
+			Message message = messageService.getMessage(messageId);
+			message.addLinks(getUriForSelf(uriInfo, message), "self");
+			message.addLinks(getUriForProfile(uriInfo, message), "profile");
+			message.addLinks(getUriForComments(uriInfo, message), "comments");
+			
+			return message;
+		}	
+		
+		public String getUriForSelf(UriInfo uriInfo, Message message) {
+		
+			return uriInfo.getBaseUriBuilder().
+					.path(MessageResource.class)
+					.path(message.getId())
+					.build()
+					.toString();
+		}
+		
+		public String getUriForProfile(UriInfo uriInfo, Message message) {
+		
+			return uriInfo.getBaseUriBuilder().
+					.path(ProfileResource.class)
+					.path(message.getAuthor())
+					.build()
+					.toString();
+		}
+		
+		public String getUriForSelf(UriInfo uriInfo, Message message) {
+		
+			return uriInfo.getBaseUriBuilder().
+					.path(MessageResource.class)						-> adds "/messages"
+					.path(MessageResource.class, "getCommentResource")	-> adds "/{messageId}/comments"
+					.path(CommentResource.class)						-> "/messages/{messageId}/comments"
+					.resolveTemplate("messageId", message.getId())		-> "/messages/1/comments"
+					.build()
+					.toString();
+		}
+	
+		Content Negotiation
+		-------------------
+		
+		Accept 
+		------
+			This header is used to inform Server what type of content client expects as response.
+		
+			Server is going to take HttpMethod + HttpPath + Produces as a key and search for the method which serves this request
+				otherwise it's going to throw an error 406 Not Acceptable
+		
+		Content-Type
+		------------
+			This header is used to inform Server what content is being delivered in request body.
+			
+			Server is going to take HttpMethod + HttpPath + Consumes as a key and search for the method which serves this request
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+	
+	
 		
 		
 		

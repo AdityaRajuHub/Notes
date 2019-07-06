@@ -1,0 +1,143 @@
+
+History
+-------
+
+	Whole app was one module
+
+	Later, they divided responsibility into modules but all modules needed to be packaged together
+	to be called an app
+		ex: dependency jars
+
+	App installed on client machine 
+		ex: Microsoft Office
+
+	App installed on Server and client calls the server 
+		ex: Web application
+
+	But the app on server side is actually a monolithic application meaning everything is packaged together
+	and placed at one place.
+	
+	Now, even on server side is dismantled and each module can be placed on different server while
+	each module exchanges data with the other. These modules are microservices.
+	
+	Microservices vs Monolith Architecture
+	
+	1. In contrast to microservices, the monolithic architecture means the code’s components are designed to work together, 
+		as one cohesive unit, sharing the same memory space. 
+	
+	2. The software built using a monolith approach is self-contained; its components are interconnected and interdependent. 
+	3. If developers want to make any changes or updates to a monolith system, they need to build and deploy the entire stack at once. 
+	4. It’s the same thing with scalability: the entire system, not just the modules in it, is scaled together. 
+	5. With the monolithic architecture it can be difficult to adopt a new technology stack, and in case you want to use a new platform or framework, 
+		you’ll have to rewrite the entire solution. Ouch.
+	
+	Advantages:
+	----------
+		1. Easier to Build and Maintain Apps
+					Each service to be deployed, rebuilt, re-deployed and managed independently.
+					If a microservice allocates too much memory or puts a heavy load on the processor, it will only affect this service.
+					It allows putting each microservice into production one by one easily.
+					
+		2. Organized Around Business Capabilities
+					Focus on building business functionality instead of writing glue code. In other words, 
+						development teams are organized around business capabilities and not technologies. 
+						
+		3. Improved Productivity and Speed
+					Faster to develop, Faster to Test
+					 
+		4. Flexibility in Using Technologies and Scalability
+					Allows decoupled services written in different programming languages to peacefully coexist with other fragments. 
+					
+		5. Autonomous, Cross-functional Teams
+					Distributed teams can work independently.
+										
+		6. ***Scalable
+					If there is load on one of the services then only that service scales up, rest of the services don't have to.
+					
+					
+					 
+Microservices
+-------------
+
+	The microservice software architecture allows a system to be divided into a number of smaller, individual and independent services.
+	
+	They run as autonomous processes and communicate with one another through APIs. 
+	Each microservice can be implemented in a different programming language on a different platform. 
+	
+	Splitting the application at server side into mutiple modules so that they can exist independently.
+	When one microservice needs some data it calls the REST API of other microservice to get the data.
+	
+	
+	Using Spring Boot
+	-----------------
+	
+		Create a project for each microservice.
+		
+		Each microservice runs on a different port, has a unique application name.
+		
+		Expose Rest API's
+		
+		To communicate, use RestTemplate or WebClient
+		
+
+Service Discovery
+-----------------
+	Eureka is developed by Netflix which offers a solution.
+	
+	There are 2 types of discoveries
+		
+		1. Client side discovery 	-	When client sends a request to discovery server with app-name then server sends back the IP of the 
+										discovered service, then client uses this IP to make the call.
+									
+		2. Server side discovery 	-	When client sends a request to discovery server with URI then server discovers the service
+										and makes the call with request URI and sends back the response to the client.
+										
+	Eureka Server is a separate Spring Boot app needs to be downloaded from spring.io with eureka-server dependency
+		and runs on a specific port like 8761.
+	
+		
+	In order to register services with the Eureka server, every client needs to add below dependencies
+	
+		1. spring-cloud-starter-netflix-eureka-cloud
+		2. In the dependencyManagement add the following dependency
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>Greenwich.RELEASE</version>
+				<type>POM</type>
+				<scope>import</scope>
+			</dependency>
+	
+	Now all the services become Eureka clients, these will show up in the Eureka Server as clients.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
