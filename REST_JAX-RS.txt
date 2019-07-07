@@ -531,11 +531,32 @@ REST	- 	No Service Definition
 
 ----------------------------------------------------------------------------------------------------------------------------------------			
 			
-Advance JAX-RS
---------------
+Advanced JAX-RS
+---------------
 
-Other way of writing a Jersey REST API instead of configuring web.xml is to have a main concrete class extend javax.ws.rs.core.Application
-	which is a abstract class. In this way automatically it picks those classes having @Path annotation to be resource handlers of Jersey.
+	Index
+	-----
+		1. Setting up a container agnostic JAX-RS app
+		2. Resource lifecycle
+		3. Param converters
+		4. MessageBodyReader and MessageBodyWriter
+		5. Custom MediaTypes
+		6. Writing a JAX-RS client
+		7. Making a GET and POST request
+		8. Handling generic types
+		9. Implementing Filter
+		10. Interceptors
+		11. Rest API Authentication
+		12. Implementing Basic Auth
+		13. Request Response flow
+		
+	-------------------------------------------------
+
+Setting up a container agnostic JAX-RS app
+------------------------------------------
+
+	Other way of writing a Jersey REST API instead of configuring web.xml is to have a main concrete class extend javax.ws.rs.core.Application
+		which is a abstract class. In this way automatically it picks those classes having @Path annotation to be resource handlers of Jersey.
 	
 		@ApplicationPath("webapi")
 		public class MyRestApp extends Application {
@@ -548,11 +569,19 @@ Other way of writing a Jersey REST API instead of configuring web.xml is to have
 		Set<Class<?>> getClasses() 
 			It may be used to return only those classes which are resource handlers.
 			
-			
-		@Singleton	-		All resource handler classes are having default scope as request. 
-							So after the request is served the instance will be destroyed.
-							If we want to make it singleton then just annotate it with 
-			
+	Resource lifecycle
+	------------------
+	
+		@Singleton		-		All resource handler classes are having default scope as request. 
+								So after the request is served the instance will be destroyed.
+								If we want to make it singleton then just annotate it with 
+								If we have resource handler as singleton then we cannot have path params on top of class
+								
+								@Path("/messages/{messageId}")	//Not possible for singleton 
+								public class Message {...}
+		
+		@RequestScoped	-		This is the default, resource handler bean created for every request
+								can have path params declared on top of class.
 			
 			
 	What if Path param is a custom datatype?
@@ -655,56 +684,586 @@ Other way of writing a Jersey REST API instead of configuring web.xml is to have
 				)
 			}
 		
+	Custom MediaType
+	----------------
+	
+	
+		
+	------------------------------------------------------------------------------------------------------------------	
+		
+	JAX-RS Client
+	-------------
+	
+		Creating a REST API Client is straight forward
+		
+		Create a class with main method
+		
+			Client client = ClientBuilder.newClient();
+			
+			WebTarget target = client.target("url");
+			
+			Builder builder = target.request();
+			
+			Response response = builder.get();	//here response is a wrapper that has access to response headers, cookies etc.
+			
+			CustomType instance = response.readEntity(CustomType.class);	-> we get our ressource
+			
+										(OR)
+			
+			// Build a HTTP GET request that accepts "text/plain" response type
+			// and contains a custom HTTP header entry "Foo: bar".
+			
+			Invocation invocation = resourceTarget.request("text/plain")
+												  .header("Foo", "bar")
+												  .buildGet();			//request is not yet made just prepared.
+
+			// Invoke the request using generic interface
+			String response = invocation.invoke(String.class);
+			
+			(OR)
+			
+			//Invoke in 1 step
+			String response = resourceTarget.request("text/plain")
+											.header("Foo", "bar")
+											.get(String.class);
+											
+		Steps in Request creations
+		--------------------------
+		
+			1. Build the target invocation object with the type of request method and get a WebTarget or Invocation instance.
+			2. Invoke the request and get a response object. This is where the actual request is made to the API.
+			3. Using the response instance get hold of response header, body etc.
+			4. Get a hold of the resource using response object.
+			
+		----------------------------------------------------------------
+		
+		javax.ws.rs.client.WebTarget extends Configurable<WebTarget>
+		----------------------------
+		
+			1. URI	getUri()
+				Get the URI identifying the resource.
+				
+			2. UriBuilder	getUriBuilder()
+				Get the URI builder initialized with the URI of the current resource target.
+				
+			3. WebTarget	matrixParam(String name, Object... values)
+				Create a new WebTarget instance by appending a matrix parameter to the existing set of matrix parameters 
+					of the current final segment of the URI of the current target instance.
+					
+			4. WebTarget	path(String path)
+				Create a new WebTarget instance by appending path to the URI of the current target instance.
+				
+			5. WebTarget	queryParam(String name, Object... values)
+				Create a new WebTarget instance by configuring a query parameter on the URI of the current target instance.
+				
+			6. Invocation.Builder	request()
+				Start building a request to the targeted web resource.
+				
+			7. Invocation.Builder	request(MediaType... acceptedResponseTypes)
+				Start building a request to the targeted web resource and define the accepted response media types.
+				
+			8. Invocation.Builder	request(String... acceptedResponseTypes)
+				Start building a request to the targeted web resource and define the accepted response media types.
+				
+			9. WebTarget	resolveTemplate(String name, Object value)
+				Create a new WebTarget instance by resolving a URI template with a given name in the URI of the current target instance using a supplied value.
+				
+			10. WebTarget	resolveTemplate(String name, Object value, boolean encodeSlashInPath)
+				Create a new WebTarget instance by resolving a URI template with a given name in the URI of the current target instance using a supplied value.
+				
+			11. WebTarget	resolveTemplateFromEncoded(String name, Object value)
+				Create a new WebTarget instance by resolving a URI template with a given name in the URI of the current target instance using a supplied encoded value.
+				
+			12. WebTarget	resolveTemplates(Map<String,Object> templateValues)
+				Create a new WebTarget instance by resolving one or more URI templates in the URI of the current target instance using supplied name-value pairs.
+				
+			13. WebTarget	resolveTemplates(Map<String,Object> templateValues, boolean encodeSlashInPath)
+				Create a new WebTarget instance by resolving one or more URI templates in the URI of the current target instance using supplied name-value pairs.
+				
+			14. WebTarget	resolveTemplatesFromEncoded(Map<String,Object> templateValues)
+				Create a new WebTarget instance by resolving one or more URI templates in the URI of the current target instance using supplied name-encoded value pairs.
+				
+				
+		Interface SyncInvoker
+		---------------------
+		
+			Uniform interface for synchronous invocation of HTTP methods.
+			
+				Response	delete()
+					Invoke HTTP DELETE method for the current request synchronously.
+					
+				<T> T	delete(Class<T> responseType)
+					Invoke HTTP DELETE method for the current request synchronously.
+					
+				<T> T	delete(GenericType<T> responseType)
+					Invoke HTTP DELETE method for the current request synchronously.
+					
+					ex: List<Message>
+						delete(new GenericType<List<Message>>());
+					
+				Response	get()
+					Invoke HTTP GET method for the current request synchronously.
+					
+				<T> T	get(Class<T> responseType)
+					Invoke HTTP GET method for the current request synchronously.
+					
+				<T> T	get(GenericType<T> responseType)
+					Invoke HTTP GET method for the current request synchronously.
+					
+					ex: List<Message>
+						get(new GenericType<List<Message>>());
+					
+				Response	head()
+					Invoke HTTP HEAD method for the current request synchronously.
+					
+				Response	method(String name)
+					Invoke an arbitrary method for the current request synchronously.
+					
+				<T> T	method(String name, Class<T> responseType)
+					Invoke an arbitrary method for the current request synchronously.
+					
+				Response	method(String name, Entity<?> entity)
+					Invoke an arbitrary method for the current request synchronously.
+					
+				<T> T	method(String name, Entity<?> entity, Class<T> responseType)
+					Invoke an arbitrary method for the current request synchronously.
+					
+				<T> T	method(String name, Entity<?> entity, GenericType<T> responseType)
+					Invoke an arbitrary method for the current request synchronously.
+					
+				<T> T	method(String name, GenericType<T> responseType)
+				Invoke an arbitrary method for the current request synchronously.
+				
+				Response	options()
+					Invoke HTTP OPTIONS method for the current request synchronously.
+					
+				<T> T	options(Class<T> responseType)
+					Invoke HTTP OPTIONS method for the current request synchronously.
+					
+				<T> T	options(GenericType<T> responseType)
+					Invoke HTTP OPTIONS method for the current request synchronously.
+					
+				Response	post(Entity<?> entity)
+					Invoke HTTP POST method for the current request synchronously.
+					
+				<T> T	post(Entity<?> entity, Class<T> responseType)
+					Invoke HTTP POST method for the current request synchronously.
+					
+				<T> T	post(Entity<?> entity, GenericType<T> responseType)
+					Invoke HTTP POST method for the current request synchronously.
+					
+				Response	put(Entity<?> entity)
+					Invoke HTTP PUT method for the current request synchronously.
+					
+				<T> T	put(Entity<?> entity, Class<T> responseType)
+					Invoke HTTP PUT method for the current request synchronously.
+					
+				<T> T	put(Entity<?> entity, GenericType<T> responseType)
+					Invoke HTTP PUT method for the current request synchronously.
+					
+				Response	trace()
+					Invoke HTTP TRACE method for the current request synchronously.
+					
+				<T> T	trace(Class<T> responseType)
+					Invoke HTTP TRACE method for the current request synchronously.
+					
+				<T> T	trace(GenericType<T> responseType)
+				Invoke HTTP TRACE method for the current request synchronously.
+				
+		public static interface Invocation.Builder extends SyncInvoker
+		--------------------------------------------------------------
+		
+		The builder, obtained via a call to one of the request(...) methods on a resource target, 
+			provides methods for preparing a client request invocation, basically everything u need to build up ur request.
+			
+		Builder builds up request, it has methods 
+		
+			Invocation.Builder	accept(MediaType... mediaTypes)
+				Add the accepted response media types.
+				
+			Invocation.Builder	accept(String... mediaTypes)
+				Add the accepted response media types.
+				
+			Invocation.Builder	acceptEncoding(String... encodings)
+				Add acceptable encodings.
+				
+			Invocation.Builder	acceptLanguage(Locale... locales)
+				Add acceptable languages.
+				
+			Invocation.Builder	acceptLanguage(String... locales)
+				Add acceptable languages.
+				
+			AsyncInvoker	async()
+				Access the asynchronous uniform request invocation interface to asynchronously invoke the built request.
+				
+			Invocation	build(String method)
+				Build a request invocation using an arbitrary request method name.
+				
+			Invocation	build(String method, Entity<?> entity)
+				Build a request invocation using an arbitrary request method name and request entity.
+				
+			Invocation	buildDelete()
+				Build a DELETE request invocation.
+				
+			Invocation	buildGet()
+				Build a GET request invocation.
+				
+			Invocation	buildPost(Entity<?> entity)
+				Build a POST request invocation.
+				
+			Invocation	buildPut(Entity<?> entity)
+				Build a PUT request invocation.
+				
+			Invocation.Builder	cacheControl(CacheControl cacheControl)
+				Set the cache control data of the message.
+				
+			Invocation.Builder	cookie(Cookie cookie)
+				Add a cookie to be set.
+				
+			Invocation.Builder	cookie(String name, String value)
+				Add a cookie to be set.
+				
+			Invocation.Builder	header(String name, Object value)
+				Add an arbitrary header.
+				
+			Invocation.Builder	headers(MultivaluedMap<String,Object> headers)
+				Replaces all existing headers with the newly supplied headers.
+				
+			Invocation.Builder	property(String name, Object value)
+				Set a new property in the context of a request represented by this invocation builder.
+				
+		
+		public interface Invocation
+		---------------------------
+		
+		A client request invocation. An invocation is a request that has been prepared and is ready for execution. 
+			Invocations provide a generic (command) interface that enables a separation of concerns between the creator and the submitter. 
+			In particular, the submitter does not need to know how the invocation was prepared, 
+				but only how it should be executed (synchronously or asynchronously) and when.
+					
+			1. Response	invoke()
+				Synchronously invoke the request and receive a response back.
+				
+			2. <T> T	invoke(Class<T> responseType)
+				Synchronously invoke the request and receive a response of the specified type back.
+				
+			3. <T> T	invoke(GenericType<T> responseType)
+				Synchronously invoke the request and receive a response of the specified generic type back.
+				
+			4. Invocation	property(String name, Object value)
+				Set a new property in the context of a request represented by this invocation.
+				
+			5. Future<Response>	submit()
+				Submit the request for an asynchronous invocation and receive a future response back.
+				
+			6. <T> Future<T>	submit(Class<T> responseType)
+				Submit the request for an asynchronous invocation and receive a future response of the specified type back.
+				
+			7. <T> Future<T>	submit(GenericType<T> responseType)
+				Submit the request for an asynchronous invocation and receive a future response of the specified generic type back.
+				
+			8. <T> Future<T>	submit(InvocationCallback<T> callback)
+				Submit the request for an asynchronous invocation and register an InvocationCallback to process the future result of the invocation.
+							
+			
+	Best Practices
+	--------------
+			
+	Instead of having the url repeating in every target we can have it separated out as baseTarget and extend it.
+	
+		WebTarget baseTarget = client.target("http:localhost:8080/webapi/");
+			
+		WebTarget messages = baseTarget.path("messages");
+		
+		WebTarget singleMessageTarget = messages.path("{messageId}");
+		
+		Message messsage = singleMessageTarget.resolveTemplate("messageId", 1)
+												.request(MediaType.APPLICATION_JSON)
+												.get(Message.class);
+		
+		
+	--------------------------------------------------------------------------------------------------------
+	
+	Sending Message body in request
+	-------------------------------
+	
+		When request method is POST, then we use Entity wrapper to wrap our CustomType
+		The conversion between our CustomType that we want to send in the body is done by Wrapper
+		It supports the following methods
+		
+			static <T> Entity<T>	entity(T entity, MediaType mediaType)
+				Create an entity using a supplied content media type.
+				
+			static <T> Entity<T>	entity(T entity, MediaType mediaType, Annotation[] annotations)
+				Create an entity using a supplied content media type.
+				
+			static <T> Entity<T>	entity(T entity, String mediaType)
+				Create an entity using a supplied content media type.
+				
+			static <T> Entity<T>	entity(T entity, Variant variant)
+				Create an entity using a supplied content media type.
+				
+			static <T> Entity<T>	entity(T entity, Variant variant, Annotation[] annotations)
+				Create an entity using a supplied content media type.
+				
+			static Entity<Form>	form(Form form)
+				Create an "application/x-www-form-urlencoded" form entity.
+				
+			static Entity<Form>	form(MultivaluedMap<String,String> formData)
+				Create an "application/x-www-form-urlencoded" form entity.
+				
+			Annotation[] 	getAnnotations()
+				Get the entity annotations.
+				
+			String	getEncoding()
+				Get entity encoding.
+				
+			T 	getEntity()
+				Get entity data.
+				
+			Locale	getLanguage()
+				Get entity language.
+				
+			MediaType	getMediaType()
+				Get entity media type.
+				
+			Variant	getVariant()
+				Get entity variant information.
+				
+			static <T> Entity<T>	html(T entity)
+				Create a "text/html" entity.
+				
+			static <T> Entity<T>	json(T entity)
+				Create an "application/json" entity.
+				
+			static <T> Entity<T>	text(T entity)
+				Create a "text/plain" entity.
+				
+			static <T> Entity<T>	xhtml(T entity)
+				Create an "application/xhtml+xml" entity.
+				
+			static <T> Entity<T>	xml(T entity)
+				Create an "application/xml" entity.
+		
+		
+	Create a POST request
+	---------------------
+	
+		Response postResponse = messageTarget.request()
+											.post(Entity.json(newMessage))
+		
+		sop(postResponse);	//status=201, reason=Created
+		
+		Message createdMessage= postResponse.readEntity(Message.class);
+		
+	Handling GenericType in the client
+	----------------------------------
+	Generic types like returning a List
+		ex: List<Message>
+				get(new GenericType<List<Message>>());
+		
+	----------------------------------------------------------------------------------------------------------------
+			
+	Implementing Filters
+	--------------------
+		
+		Contains cross cutting concerns so that we don't need to implement them in each and every request.
+		Filter is invoked no matter the request is successful or error.
+		Any class implementing the below filters need to be annotated with @Provider.
+		
+		
+		There are 2 types of Filters
+		
+			1. ContainerRequestFilter	- 	called before the request in invoked
+			
+				Method:	filter(ContainerRequestContext reqContext)
+			
+			2. ContainerResponseFilter	- 	called after the response is prepared
+				
+				Method: filter(ContainerRequestContext reqContext, ContainerResponseContext resContext)
 		
 		
 		
+	---------------------------------------------------------------------------------------------------------------
+	
+	Client session based Authentication
+	-----------------------------------
+								
+								
+					Classic session based Authentication
+					------------------------------------
+								
+								username/password
+			Client	------------------------------------------>	Server
+									request
+			
+							session token as a cookie
+			Client	<-----------------------------------------	Server
+									response
+		   (cookie)
+								session token
+			Client	------------------------------------------>	Server
+									request
+
+								session token
+			Client	------------------------------------------>	Server
+									request
+		
+		
+	Session based authentication is a problem with REST API's since it is Stateless.
+
+	So everytime request is made authentication is sent in every request which is called Basic auth.
+	
+								username/password
+			Client	------------------------------------------>	Server
+									request
+		
+	Basic auth - Client side
+	------------------------
+									Base64 encoding
+			username:password	----------------------->	dXcvBnMweRTsgnHmoP3N9j=
+		 _________________________________________________________
+		|														  |
+		| 	Header: Authorization:	Basic dXcvBnMweRTsgnHmoP3N9j= |
+		|---------------------------------------------------------|
+		|	Body  : .............								  |
+		|_________________________________________________________|
 		
 		
 		
+	Encoding is not providing security. Anybody will be able to decode Base64. But the intent of encoding is to encode 
+		non-HTTP compatible characters that may be in the username and password into those that are HTTP-compatible.
+		
+	So inorder to ensure security we need to use HTTPS.
 		
 		
+	Advantages:
+	----------
+	
+		1. Simple
+		2. Stateless server
+		3. Supported by all browsers
+		
+	Disadvantages
+	-------------
+		1. Requires Https
+		2. Subject replay attacks
+		3. Logout is tricky
 		
 		
+	There are better solution to encrypt the username/password like 
+	
+		1. Digest access, 
+		2. Asymmetric cryptography, 
+		3. OAuth, 
+		4. JWT(Json web tokens)
 		
 		
+	Implementing Basic Auth in our Rest API
+	---------------------------------------
+	
+		Since auth info is sent as a key "Authorization", we can get it's value from the header
+			in our concrete class implementing ContainerRequestFilter.
+			
+			List<String> authHeader= requestContext.getHeader().get("Authorization")
+			
+			String authToken= authHeader.get(0);	//returns Basic dXcvBnMweRTsgnHmoP3N9j=
+			
+			authToken = authToken.replaceFirst("Basic ", "");
+			
+			String decodedString= Base64.decodeAsString(authToken);	// returns username:password
+			
+			StringTokenizer tokens = new StringTokenizer(decodedString, ":");
+			
+			String userName= tokens.nextToken();
+			String password= tokens.nextToken();
 		
+			//check creadentials are valid
+				//doSomething
+			//else
+				Response unauthorizedResponse= Response.status(Response.status.UNAUTHORIZED)
+														.entity("You don't have access to the resource")
+														.build();
+														
+				requestContext.abortWith(unauthorizedResponse);
 		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+		This filter is going to be executed for every request, we can also make it work for certains URI's
+			by getting the uriPath from requestContext.
 	
 
+	Interceptors
+	------------
+	
+		1. Model similar to Filters
+		2. Used to manipulate entities (input and output streams) : MessageBody
+		
+		2 Kinds
+			1. ReaderInterceptor
+			2. WriterInterceptor
+
+
+	Interceptors vs Filters
+	-----------------------
+	
+		1. Used to manipulate message body				1. Used to manipulate request and response params
+															headers, uri's etc
+		
+		2. 2 Kinds										2. 2 Kinds
+			1. ReaderInterceptor							1. ContainerRequestFilter
+			2. WriterInterceptor							2. ContainerResponseFilter
+
+		Example: Encoding a response Entity				Example: Logging, Security etc.
 
 
 
+	Filters and Interceptors can be implemented on the client side as well.
+	
+	It works the same way as it works on the server side.
+		
+		Filters
+			1. ClientRequestFilter
+			2. ClientResponseFilter
+		
+		Interceptor								MessageBody
+			1. ReaderInterceptor					1. MessageBodyReader
+			2. WriterInterceptor					2. MessageBodyWriter
 
 
-
-
-
-
-
+	Order of execution
+	------------------
+		Client side (before sending out request)
+			1. ClientRequestFilter
+			2. WriterInterceptor
+			3. MessageBodyWriter
+		
+		Server side (before processing request)
+			4. ContainerRequestFilter
+			5. ReaderInterceptor
+			6. MessageBodyReader
+			
+		Server side (before sending out response)
+			7. ContainerResponseFilter
+			8. WriterInterceptor
+			9. MessageBodyWriter
+		
+		Client side (before receiving response)
+			10. ContainerRespnseFilter
+			11. ReaderInterceptor
+			12. MessageBodyReader
+			
+						1. ContainerRequestFilter									
+						2. WriterInteceptor										
+						3. MessageBodyWriter										
+																				4. ContainerRequestFilter
+																				5. ReaderInterceptor
+																				6. MessageBodyReader
+		Client 			------------------------------------------------------------------------------>			Server
+																				7. ContainerResponseFilter
+																				8. WriterInterceptor
+																				9. MessageBodyWriter
+						10. ContainerResponseFilter
+						11. ReaderInterceptor
+						12. MessageBodyReader
 
 
 
