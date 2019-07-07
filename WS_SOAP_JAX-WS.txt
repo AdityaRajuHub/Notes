@@ -524,7 +524,32 @@ WSDL on a high level
 	then Employee POJO needs to be represented as a type in WSDL and input message 
 	needs to refer to the type.
 	
+	Multiple-port Service Defined in a WSDL
+	---------------------------------------
+	Ex:	<wsdl:service name="Lighting">
+			<wsdl:port name="SwitchPower" binding="tns:SwitchPower">
+				<soap:address location="http://localhost:8080/Lighting/SwitchPower/" />
+			</wsdl:port>
+			<wsdl:port name="Dimming" binding="tns:Dimming">
+				<soap:address location="http://localhost:8080/Lighting/Dimming/" />
+			</wsdl:port>
+		</wsdl:service>
 	
+		***You can have multiple ports under a service. In fact, a service groups a set of related ports together.
+	
+		Ports within a service have the following relationship:
+		
+			1. None of the ports communicate with each other (e.g. the output of one port is not the input of another).
+			
+			2. If a service has several ports that share a port type, but employ different bindings or addresses, the ports are alternatives. 
+				Each port provides semantically equivalent behavior (within the transport and message format limitations imposed by each binding). 
+				This allows a consumer of a WSDL document to choose particular port(s) to communicate with based on some criteria (protocol, distance, etc.).
+				
+			3. By examining its ports, we can determine a service's port types. 
+				This allows a consumer of a WSDL document to determine if it wishes to communicate to a 
+					particular service based whether or not it supports several port types. 
+				This is useful if there is some implied relationship between the operations of the port types, 
+					and that the entire set of port types must be present in order to accomplish a particular task.
 Note: 
 	1. Internally to generate the SOAP request and response messages, Java uses JAXB
 		which is Java API for XML binding.
