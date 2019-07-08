@@ -1,10 +1,14 @@
 Stream API
 ----------
-It is possible to instantiate a stream and to have an accessible reference to it as long as only intermediate operations were called. Executing a terminal operation makes a stream inaccessible.
+	There are many ways to create a stream instance of different sources. 
+	Once created, the instance will not modify its source, therefore allowing the creation of multiple instances from a single source.
 
-An attempt to reuse the same reference after calling the terminal operation will trigger the IllegalStateException:
+	It is possible to instantiate a stream and to have an accessible reference to it as long as only intermediate operations were called. 
+	Executing a terminal operation makes a stream inaccessible.
 
-1
+	An attempt to reuse the same reference after calling the terminal operation will trigger the IllegalStateException:
+
+
 Optional<String> firstElement = stream.findFirst();
 As the IllegalStateException is a RuntimeException, a compiler will not signalize about a problem. So, it is very important to remember that Java 8 streams can’t be reused.
 
@@ -19,9 +23,9 @@ A stream by itself is worthless, the real thing a user is interested in is a res
 
 The right and most convenient way to use streams are by a stream pipeline, which is a chain of stream source, intermediate operations, and a terminal operation. For example:
 
-1
-2
-3
+_	\|/   _
+ \_(``/)_/
+
 List<String> list = Arrays.asList("abc1", "abc2", "abc3");
 long size = list.stream().skip(1)
   .map(element -> element.substring(0, 3)).sorted().count();

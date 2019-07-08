@@ -1,39 +1,301 @@
 Maven
 -----
 
+Build Lifecycle Basics
+----------------------
+
+Maven is based around the central concept of a build lifecycle. 
+What this means is that the process for building and distributing a particular artifact (project) is clearly defined.
+A Build Lifecycle is Made Up of Phases.
+
+Default lifecycle comprises of the following phases
+
+1. validate 	- validate the project is correct and all necessary information is available
+2. compile 		- compile the source code of the project
+3. test 		- test the compiled source code using a suitable unit testing framework. These tests should not require the code be packaged or deployed
+4. package 		- take the compiled code and package it in its distributable format, such as a JAR.
+5. verify 		- run any checks on results of integration tests to ensure quality criteria are met
+6. install 		- install the package into the local repository, for use as a dependency in other projects locally
+7. deploy 		- done in the build environment, copies the final package to the remote repository for sharing with other developers and projects.
+
+Each phase when executed individually executes all its preceeding phases before itself running.
+
+
+
+Maven Archetype
+---------------
+
+	What is Archetype?
+	-----------------
+	
+	Archetype is maven project templating toolkit.
+	An archetype is defined as an original pattern or model from which all other things of the same kind are made.
+	Archetype will help authors create Maven project templates for users, and provides users with the means to 
+		generate parameterized versions of those project templates.
+		
+	To create a new project based on an Archetype, you need to call mvn archetype:generate goal, like the following:
+		
+		> mvn archetype:generate
+		
+
 Dependency element tells Maven to do the following:
 
-1. Create a search path based on the groupId, artifactId, and version. The
-version element is set to the camel-version property, which is defined in the
-POM referenced in the parent element, and resolves to 2.20.1. The type of
-dependency isn’t specified, so the JAR file type is assumed. 
-The search path is org/apache/camel/camel-core/2.20.1/camel-core-2.20.1.jar.
+	1. Create a search path based on the groupId, artifactId, and version. The
+		version element is set to the camel-version property, which is defined in the
+		POM referenced in the parent element, and resolves to 2.20.1. The type of
+		dependency isn’t specified, so the JAR file type is assumed. 
+		The search path is org/apache/camel/camel-core/2.20.1/camel-core-2.20.1.jar.
 
-2. Because listing 1.3 defines no special places for Maven to look for the Camel
-dependencies, it looks in Maven’s central repository, located at
-http://repo1.maven.org/maven2.
+	2. Because listing 1.3 defines no special places for Maven to look for the Camel
+		dependencies, it looks in Maven’s central repository, located at
+		http://repo1.maven.org/maven2.
 
-3. Combining the search path and the repository URL, Maven tries to download
-http://repo1.maven.org/maven2/org/apache/camel/camelcore/2.20.1/camel-core-2.20.1.jar.
+	3. Combining the search path and the repository URL, Maven tries to download
+		http://repo1.maven.org/maven2/org/apache/camel/camelcore/2.20.1/camel-core-2.20.1.jar.
 
-4. This JAR is saved to Maven’s local download cache, which is typically located
-in the home directory under the .m2/repository. This is ~/.m2/repository on
-Linux/macOS, and C:\Users\<Username>\.m2\repository on recent versions
-of Windows.
+	4. This JAR is saved to Maven’s local download cache, which is typically located
+		in the home directory under the .m2/repository. This is ~/.m2/repository on
+		Linux/macOS, and C:\Users\<Username>\.m2\repository on recent versions
+		of Windows.
 
-5. When the application code in listing 1.2 is started, the Camel JAR is added to
-the classpath.
-To run the example in listing 1.2, change to the chapter1/file-copy directory
-and use the following command:
+	5. When the application code in listing 1.2 is started, the Camel JAR is added to
+		the classpath.
+		To run the example in listing 1.2, change to the chapter1/file-copy directory
+		and use the following command:
 
-mvn compile exec:java
+	mvn compile exec:java
 
-This instructs Maven to compile the source in the src directory and to 
-execute the FileCopierWithCamel class with the camel-core JAR on the
-classpath.
+	This instructs Maven to compile the source in the src directory and to 
+	execute the FileCopierWithCamel class with the camel-core JAR on the
+	classpath.
 
 Maven – Settings File
 ----------------------
 
 Maven settings.xml file contains configurations that are not specific to a project, but are global in nature. 
 It also contains information that is not meant to be distributed (e.g. passwords).
+
+
+Specifying resource directories
+-------------------------------
+
+	By default, Maven will look for your project's resources under src/main/resources.
+	
+	Or you can specify your resource using 
+		Project
+		|-- pom.xml
+		`-- src
+			`-- my-resource-1
+			`-- my-resource-2
+	
+		<project>
+		 ...
+		 <build>
+		   ...
+		   <resources>
+			 <resource>
+			   <directory>src/my-resource-1</directory>
+			 </resource>
+			 <resource>
+			   <directory>src/my-resource-2</directory>
+			 </resource>
+		   </resources>
+		   ...
+		 </build>
+		 ...
+		</project>
+
+Filtering
+---------
+	
+	Variables can be included in your resources. 
+	These variables, denoted by the ${...} delimiters, can come from the 
+	
+		1. system properties, 
+		2. your project properties, 
+		3. your filter resources and 
+		4. from the command line.
+
+	Suppose src/main/resources/hello.txt contains
+		
+		Hello ${name}
+		
+		POM.xml
+		-------
+		<project>
+		  ...
+		  <name>My Resources Plugin Practice Project</name>
+		  ...
+		  <build>
+			...
+			<resources>
+			  <resource>
+				<directory>src/main/resources</directory>
+			  </resource>
+			  ...
+			</resources>
+			...
+		  </build>
+		  ...
+		</project>
+	
+	Upon calling
+
+		> mvn resources:resources
+	
+	This will create a resource output in target/classes/hello.txt which contains exactly the same text.
+
+		Hello ${name}
+
+	However, if we add a <filtering> tag to our POM and set it to true like this:
+
+      ...
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+      ...
+	
+	Our target/classes/hello.txt after calling 
+	
+	> mvn resources:resources would be
+
+		Hello My Resources Plugin Practice Project
+
+	> mvn resources:resources -Dname="world"
+	
+		Hello world
+		
+	Specifying our own variables
+	----------------------------
+	
+		<properties>
+			<your.name>world</your.name>
+		</properties>
+
+	But to organize your project, you may want to put all your variables and their values in a separate file 
+		so that you will not have to rewrite your POM, or set their values all the time with every build. 
+	
+	This can be done by adding a filter.
+	
+		<filters>
+		  <filter>[a filter property]</filter>
+		</filters>
+		
+	Ex: my-filter-values.properties
+	
+		your.name = world
+		
+		<filters>
+		  <filter>my-filter-values.properties</filter>
+		</filters>
+
+	Now you can use the filters to filter the resources
+		<resources>
+		  <resource>
+			<directory>src/main/resources-filtered</directory>
+			<filtering>true</filtering>
+		  </resource>
+		  ...
+		</resources>
+
+	Now you can put those files into src/main/resources which should not filtered and the other files into src/main/resources-filtered.
+	
+	Including and Excluding Files and Directories
+	---------------------------------------------
+	
+		<resource>
+			<directory>src/my-resources</directory>
+			<includes>
+			  <include>**/*.txt</include>
+			  <include>**/*.rtf</include>
+			</includes>
+			<excludes>
+			  <exclude>**/*.bmp</exclude>
+			  <exclude>**/*.jpg</exclude>
+			  <exclude>**/*.jpeg</exclude>
+			  <exclude>**/*.gif</exclude>
+			</excludes>
+		</resource>
+
+	Copy Resources
+	--------------
+	
+		You can use the mojo copy-resources to copy resources which are not in the default maven layout 
+			or not declared in the build/resources element and attach it to a phase
+			
+		<project>
+			
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-resources-plugin</artifactId>
+						<version>3.1.0</version>
+						<executions>
+						
+							<execution>
+							
+								<id>copy-resource</id>
+								
+								<phase>validate</phase>
+								
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								
+								<configuration>
+									<outputDirectory></outputDirectory>
+									<resources>
+										<resource>
+											<directory>src/non-packaged-resources</directory>
+											<filtering>true</filtering>
+										</resource>
+									</resources>
+								</configuration>
+								
+							</execution>
+						
+						</executions>
+					</plugin>				
+				</plugins>
+			</build>
+			
+		</project>
+
+
+Plugins
+-------
+
+	Maven is - at its heart - a plugin execution framework; all work is done by plugins.
+
+	The below are Core plugins supported by The Maven Project
+	
+	clean		Clean up after the build.	Git / GitHub	Jira MCLEAN
+	compiler	Compiles Java sources.	Git / GitHub	Jira MCOMPILER
+	deploy		Deploy the built artifact to the remote repository.	Git / GitHub	Jira MDEPLOY
+	failsafe	Run the JUnit integration tests in an isolated classloader.	Git / GitHub	Jira SUREFIRE
+	install		Install the built artifact into the local repository.	Git / GitHub	Jira MINSTALL
+	resources	Copy the resources to the output directory for including in the JAR.	Git / GitHub	Jira MRESOURCES
+	site		Generate a site for the current project.	Git / GitHub	Jira MSITE
+	surefire	Run the JUnit unit tests in an isolated classloader.	Git / GitHub	Jira SUREFIRE
+	verifier	Useful for integration tests - verifies the existence of certain conditions.
+
+	Packaging type plugins
+	
+	ear			Generate an EAR from the current project.
+	ejb			Build an EJB (and optional client) from the current project.
+	jar			Build a JAR from the current project.	
+	rar			Build a RAR from the current project.	
+	war			Build a WAR from the current project.	
+
+
+
+
+
+
+
+
+
+
+
+

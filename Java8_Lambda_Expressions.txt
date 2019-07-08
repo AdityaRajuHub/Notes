@@ -1,5 +1,8 @@
+
 Java has always been an Object Oriented Programming language. 
+
 What is means that everything in java programming revolves around Objects (except some primitive types for simplicity). 
+
 We don’t have only functions in java, they are part of Class and we need to use the class/object to invoke any function.
 
 C++, JavaScript; they are called functional programming language because we can write functions and use them when required.
@@ -88,6 +91,7 @@ Advantages
 2. Sequential and Parallel Execution Support - Stream API 
 
 3. Passing Behaviors into methods
+
 Ex:
 	public static int sumWithCondition(List<Integer> numbers, Predicate<Integer> predicate) {
 	    return numbers.parallelStream()
@@ -246,11 +250,14 @@ so you don't have to create your own functional interfaces for every little use 
 		
 Primitive versions of functional interfaces
 -------------------------------------------
-Due to the way generics are implemented, parameters of the functional interfaces (for example, Predicate<T>) can be bound only to reference types (like String, objects, etc).
+Due to the way generics are implemented, parameters of the functional interfaces 
+(for example, Predicate<T>) can be bound only to reference types (like String, objects, etc).
 
-If you want to use primitive types with these functional interfaces, Java uses a mechanism called autoboxing to automatically convert a primitive to its corresponding wrapper type (for example, int to Integer) and vice versa.
+If you want to use primitive types with these functional interfaces, Java uses a mechanism called autoboxing to 
+	automatically convert a primitive to its corresponding wrapper type (for example, int to Integer) and vice versa.
 
-But since boxed values use more memory, this comes with a performance cost. For this reason, Java provides specialized versions of the functional interfaces to avoid autoboxing operations when the inputs or outputs are primitives.
+But since boxed values use more memory, this comes with a performance cost. 
+For this reason, Java provides specialized versions of the functional interfaces to avoid autoboxing operations when the inputs or outputs are primitives.
 
 For example, 
 
