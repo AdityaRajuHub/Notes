@@ -4,22 +4,100 @@ Maven
 Build Lifecycle Basics
 ----------------------
 
-Maven is based around the central concept of a build lifecycle. 
-What this means is that the process for building and distributing a particular artifact (project) is clearly defined.
-A Build Lifecycle is Made Up of Phases.
+	Maven is based around the central concept of a build lifecycle. 
+	What this means is that the process for building and distributing a particular artifact (project) is clearly defined.
+	A Build Lifecycle is Made Up of Phases.
 
-Default lifecycle comprises of the following phases
+	Default lifecycle comprises of the following phases
 
-1. validate 	- validate the project is correct and all necessary information is available
-2. compile 		- compile the source code of the project
-3. test 		- test the compiled source code using a suitable unit testing framework. These tests should not require the code be packaged or deployed
-4. package 		- take the compiled code and package it in its distributable format, such as a JAR.
-5. verify 		- run any checks on results of integration tests to ensure quality criteria are met
-6. install 		- install the package into the local repository, for use as a dependency in other projects locally
-7. deploy 		- done in the build environment, copies the final package to the remote repository for sharing with other developers and projects.
+	1. validate 	- validate the project is correct and all necessary information is available
+	2. compile 		- compile the source code of the project
+	3. test 		- test the compiled source code using a suitable unit testing framework. These tests should not require the code be packaged or deployed
+	4. package 		- take the compiled code and package it in its distributable format, such as a JAR.
+	5. verify 		- run any checks on results of integration tests to ensure quality criteria are met
+	6. install 		- install the package into the local repository, for use as a dependency in other projects locally
+	7. deploy 		- done in the build environment, copies the final package to the remote repository for sharing with other developers and projects.
 
-Each phase when executed individually executes all its preceeding phases before itself running.
+	Each phase when executed individually executes all its preceeding phases before itself running.
 
+	A Build Phase is Made Up of Plugin Goals, we can change the manner in which a build phase carries out it's responsibilities
+		by declaring plugin goals bound to those life cycle phases.
+		
+		Life cycle Phase 1	<------------>	Plugin Goal 1
+		Life cycle Phase 1	<------------>	Plugin Goal 2
+		Life cycle Phase 1	<------------>	Plugin Goal 3
+		
+		
+	A plugin goal represents a specific task which contributes to the building and managing of a project.
+
+	It may be bound to zero or more build phases. 
+
+	***A goal not bound to any build phase could be executed outside of the build lifecycle by direct invocation. 
+
+	The order of execution depends on the order in which the goal(s) and the build phase(s) are invoked. 
+	For example, consider the command below. 
+
+	mvn clean dependency:copy-dependencies package
+
+	The clean and package arguments are build phases, while the dependency:copy-dependencies is a goal (of a plugin).
+
+	Furthermore, a build phase can also have zero or more goals bound to it. 
+		If a build phase has no goals bound to it, that build phase will not execute. 
+		But if it has one or more goals bound to it, it will execute all those goals.
+		
+How to assign tasks to each of those build phases ?
+--------------------------------------------------
+
+	1. Packaging
+	------------
+	
+		The first and most common way is to set packaging to ur project jar, war, ear and pom in <packaging>
+			default is jar.
+			
+		Each packaging contains a list of goals to bind to a particular phase by default.
+	
+		1. process-resources							resources:resources
+		2. compile										compiler:compile
+		3. compile-test-resources						compiler:resources
+		4. test-compile									compiler:test
+		5. test											surefire:test
+		6. package										jar:jar
+		7. install										install:install
+		8. deploy										deploy:deploy
+	
+	2. Plugins
+	----------
+	
+		The second way to add goals to phases is to configure plugins in your project. 
+		Plugins are artifacts that provide goals to Maven. 
+		
+		Furthermore, a plugin may have one or more goals wherein each goal represents a capability of that plugin. 
+		For example, the Compiler plugin has two goals: compile and testCompile
+		
+		The goals that are configured will be added to the goals already bound to the lifecycle from the packaging selected.
+		If more than one goal is bound to a particular phase, the order used is that those from the packaging are executed first, 
+			followed by those configured in the POM
+		
+		 <plugin>
+		   <groupId>org.codehaus.modello</groupId>
+		   <artifactId>modello-maven-plugin</artifactId>
+		   <version>1.8.1</version>
+		   <executions>
+			 <execution>
+			   <configuration>
+				 <models>
+				   <model>src/main/mdo/maven.mdo</model>
+				 </models>
+				 <version>4.0.0</version>
+			   </configuration>
+			   <goals>
+				 <goal>java</goal>
+			   </goals>
+			 </execution>
+		   </executions>
+		 </plugin>
+
+	Note: <executions> element is there so that you can run the same goal multiple times with different configuration if needed.
 
 
 Maven Archetype
@@ -287,6 +365,147 @@ Plugins
 	jar			Build a JAR from the current project.	
 	rar			Build a RAR from the current project.	
 	war			Build a WAR from the current project.	
+
+
+Profiles
+--------
+
+	Apache Maven 2.0 goes to great lengths to ensure that builds are portable means allowing a POM to be used in any system with same effect.
+	Among other things, this means allowing build configuration inside the POM, avoiding all filesystem references (in inheritance, dependencies, and other places), 
+		and leaning much more heavily on the local repository to store the metadata needed to make this possible.
+
+
+	Sometimes posrtablity may not be entirely possible.
+	Under certain conditions, 
+	
+		1. Plugins may need to be configured with local filesystem paths 
+		2. Slightly different dependency set will be required, 
+		3. Project's artifact name may need to be adjusted slightly. 
+		4. You may even need to include a whole plugin in the build lifecycle depending on the detected build environment.
+	
+	To address these circumstances, Maven 2.0 introduces the concept of a build profile.
+	
+	Profiles are specified using a subset of the elements available in the POM itself (plus one extra section), and are triggered in any of a variety of ways. 
+	They modify the POM at build time, and are meant to be used in complementary sets to give equivalent-but-different parameters 
+		for a set of target environments 
+		Ex: the path of the appserver root in the development, testing, and production environments.
+		
+	As such, profiles can easily lead to differing build results from different members of your team. 
+	However, used properly, profiles can be used while still preserving project portability
+
+	What are the different types of profile?
+	----------------------------------------
+	
+		Per Project
+		- Defined in the POM itself (pom.xml).
+
+		Per User
+		- Defined in the Maven-settings (%USER_HOME%/.m2/settings.xml).
+
+		Global
+		- Defined in the global Maven-settings (${maven.home}/conf/settings.xml)
+
+	How can a profile be triggered?
+	------------------------------
+	A profile can be triggered/activated in several ways:
+
+		1. Explicitly	
+				Using -P option 
+					Ex: mvn groupId:artifactId:goal -P profile-1,profile-2
+				
+		2. Through Maven settings
+				Profiles listed in the <activeProfiles> tag would be activated by default every time a project use it.
+
+				<settings>
+				  ...
+				  <activeProfiles>
+					<activeProfile>profile-1</activeProfile>
+				  </activeProfiles>
+				  ...
+				</settings>
+			
+		3. Based on environment variables
+				<profiles>
+				  <profile>
+					<activation>
+					  <jdk>1.4</jdk>	OR 	<jdk>[1.3,1.6)</jdk>
+					</activation>
+					...
+				  </profile>
+				</profiles>
+		
+		4. OS settings
+				
+				<profiles>
+				  <profile>
+					<activation>
+						<os>
+						 <name>Windows XP</name>
+						 <family>Windows</family>
+						 <arch>x86</arch>
+						 <version>5.1.2600</version>
+						 </os>
+					</activation>
+						...
+				  </profile>
+				</profiles>
+			
+		5. System property
+				Those specified with -Dkey=value
+				
+				Ex: mvn groupId:artifactId:goal -Ddebug=false
+		
+				<profiles>
+				  <profile>
+					<activation>
+					  <property>
+						<name>debug</name>
+					  </property>
+					</activation>
+					...
+				  </profile>
+				</profiles>
+			
+		6. Present or missing files
+				Using <exists> and <missing> tags
+		
+				<file>
+					<missing>target/generated-sources/axistools/wsdl2java/org/apache/maven</missing>
+				</file>
+
+		7. Active by default
+				
+				<profiles>
+				  <profile>
+					<id>profile-1</id>
+					<activation>
+					  <activeByDefault>true</activeByDefault>
+					</activation>
+					...
+				  </profile>
+				</profiles>
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
