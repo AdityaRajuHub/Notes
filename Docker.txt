@@ -1,0 +1,241 @@
+Docker
+------
+Docker is a platform for packaging, deploying, and running applications. 
+Docker applications run in containers that can be used on any system: 
+	a developer’s laptop, systems on premises, or in the cloud.
+
+Applications can be packaged as images that contain everything needed to run them: 
+	code, runtime environment, libraries, and configuration. 
+Images run in containers, which are discrete processes that take up only as many resources as any other executable.
+
+It’s important to note that Docker containers don’t run in their own virtual machines, but share a Linux kernel. 
+Compared to virtual machines, containers use less memory and less CPU.
+
+Virtual Machine vs Containers
+-----------------------------
+
+VM's have a guest OS on which the applications run. 
+The guest OS has it's own Kernel.
+All the guest OS runs on a host OS.
+All the resources are allocated between multiple VM's.
+
+The host OS uses a Hypervisor which is used for managing these VM's.
+There are 2 types of Hypervisors
+1. Type1 -> which runs directly on hardware which is more efficient.
+2. Type2 -> which runs on a host OS and makes system calls on host OS to allocate resources.
+
+Say total RAM is 16 GB
+
+VM1 -> 1GB used of 4GB
+VM2 -> 3GB used of 6GB
+VM3 -> 2GB used of 8GB
+
+Hardware -> Host OS -> Hypervisor -> VM -> Guest OS -> App
+
+Even though there is enough memory unused, a new VM cannot be allocated. This is an example of wastage of resources.
+
+So Containerization overcomes this problem by having containers NOT run in their own VM's but rather
+they share a Linux Kernel(host OS).
+Multiple isolated applications or services run on a single host and access the same OS kernel. 
+Containers work on bare-metal systems, cloud instances and virtual machines, across Linux and select Windows and Mac OSes.
+
+Hardware -> Host OS -> Docker Engine -> App
+
+What is a container?
+In 4 bullet points:
+
+1. Containers share the host kernel
+2. Containers use the kernel ability to group processes for resource control
+3. Containers ensure isolation through namespaces
+4. Containers feel like lightweight VMs (lower footprint, faster), but are not Virtual Machines!
+
+How it works
+------------
+Application containers include the runtime components -- 
+such as files, environment variables and libraries -- necessary to run the desired software. 
+
+Application containers consume fewer resources than a comparable deployment on virtual machines 
+because containers share resources without a full operating system to underpin each app. 
+
+The complete set of information to execute in a container is the image. 
+The container engine deploys these images on hosts.
+
+Running on non-Linux platforms
+------------------------------
+
+Linux runtime is required for Docker. (we use linux commands inside dockerFile to build the image)
+Running on macOS and Windows 10 use a single Linux virtual machine. 
+So you will need a Hypervisor on Host OS to run a VM.
+The containers share this system.
+
+Containerization has enjoyed widespread adoption because of its
+
+	1. Consistent test environment for development and QA.
+	2. Cross-platform packages called images.
+	3. Isolation and encapsulation of application dependencies.
+	4. Ability to scale efficiently, easily, and in real time.
+	5. Enhances efficiency via easy reuse of images.
+
+Let's look at an example for creating a container which hosts a Tomcat app server
+
+Example Docker File
+-------------------
+
+	FROM centos
+
+	MAINTAINER aksarav@middlewareinventory.com
+
+	RUN mkdir /opt/tomcat/
+
+	WORKDIR /opt/tomcat
+		-> below commands would apply to the specified directory
+
+	RUN curl -O https://www-eu.apache.org/dist/tomcat/tomcat-8/v8.5.40/bin/apache-tomcat-8.5.40.tar.gz
+		-> unix command to download the file from the url
+
+	RUN tar xvfz apache*.tar.gz
+		-> unzip the file
+
+	RUN mv apache-tomcat-8.5.40/* /opt/tomcat/.
+		-> move the file in the current directory to the location /opt/tomcat/.
+
+	RUN yum -y install java
+		-> yum is a package manager used to install/update/remove installations
+
+	RUN java -version
+
+	WORKDIR /opt/tomcat/webapps
+		-> now the below commands would apply to the specified directory
+
+	RUN curl -O -L https://github.com/AKSarav/SampleWebApp/raw/master/dist/SampleWebApp.war
+
+	EXPOSE 8080
+
+	CMD ["/opt/tomcat/bin/catalina.sh", "run"]
+
+MAINTAINER – Who Crate and manage this container image
+
+FROM – What is the base image, we are going to use to host our container. 
+	you can either use a minimal OS image like CentOS, Alpine or 
+	you can create your own from the scratch by mentioning SCRATCH as a value to this.
+
+RUN – Commands to Run to make the image( the future container) in the way you want
+
+EXPOSE Do you want your image or application in the image to expose any port to the external world or at least to the host.  
+	For example if you are building Apache HTTP server image you can EXPOSE port 80, In our case it is 8080
+
+CMD The Default Command of the container which gets created using this image.  Every Container must have a Default Command. 
+	the Container would run as long as the Default Command is running.
+
+ADD or COPY The files you want to copy into the container from your host.
+
+WORKDIR Define a workspace where the upcoming (or) following set of commands/instructions  should be executed in
+
+Here you can see we have used WORKDIR twice, One is to execute set of commands on the TOMCAT_HOME/CATALINA_HOME  
+	another WORKDIR is to download the Sample Application WAR file and deploy the war into Docker Tomcat Container.
+
+----------------------------------------------
+
+The Syntax of the Docker Image command is
+
+	$ docker build -t [Name Of the Image]  .
+		-t specifies the tag
+		dot (or “.”), told Docker to look for the Dockerfile in the current working directory.
+	$ docker login
+
+	$ docker push saravak/tomcat8
+
+	$ docker pull saravak/tomcat8	-> no need to pull
+		Q: Do I have to do Docker Pull If I want to download this image before Running it as a container?
+		A: The Answer is NO, Docker By default, would download the image from Docker Hub if 
+			the image is not available in the local image repository.  
+			So it is not necessary that you have to explicitly do the docker pull
+
+	$ docker container run -it -d --name tomcatcontainer1 -p 8081:8080 saravak/tomcat8
+	d6f0859b69d216885e8671d9d024f7bdfb82e7a2af1b40fbc8016e36c51313a7
+
+		-it: to enable Interactive Session/SSH to get into the container at a later point in time
+
+		-d: Run the container in the background (always recommended)
+
+		--name: name your container
+
+		saravak/tomcat8: the Image used to create this container. the Image instantiated as a container
+
+		-p 8081:8080:  Forwarding the Container port 8080 to Host 8081
+
+	$ docker ps -> shows the running containers
+
+-------------------------------------------------------------------------------------------------------
+
+We create a docker file which contains instructions.
+When the image is being built each of those instructions are executed.
+Dockerfiles can run commands as part of the image build process.
+The built image is ready to be run on a container.
+Instructions are already executed, the container is just the runtime for the image,
+which allocates resources using Host OS.
+
+Example:
+
+	# Use an official Python runtime as a parent image
+	FROM python:2.7-slim
+	WORKDIR /app
+	ADD . /app
+	RUN pip install --trusted-host pypi.python.org Flask
+	ENV NAME World
+	CMD ["python", "app.py"]
+
+This Dockerfile starts with an image that contains a Python runtime. 
+We can see from the name that it provides version 2.7 in a slim configuration that contains a minimal number of Python packages.
+
+Next, it establishes a WORKDIR (working directory) named /app and ADDs the current working directory to it.
+
+After adding the script to the image, we need to install the Flask Python package, 
+the library we use for the web server. 
+The RUN instruction executes pip install for this. 
+
+***Dockerfiles can run commands as part of the image build process.
+
+Next, it sets the environment variable NAME, which is used in the HTML page returned by app.py
+We can override this variable from the command line:
+	$ docker run --name webapp -p 8080:4000 -e NAME="Dude" mypyweb
+
+And finally, the Dockerfile specifies the command to run when the image is run. 
+CMD accepts a command and a list of arguments to pass to the command. 
+This image executes the Python interpreter, passing it app.py.
+
+If we build the above file
+
+	$ docker build -t mypyweb .
+
+	Sending build context to Docker daemon 4.096kB
+	Step 1/6 : FROM python:2.7-slim
+	---> b16fde09c92c
+	Step 2/6 : WORKDIR /app
+	---> Using cache
+	---> e8cfc6466e29
+	Step 3/6 : ADD . /app
+	---> Using cache
+	---> b0ed613be2d4
+	Step 4/6 : RUN pip install --trusted-host pypi.python.org Flask
+	---> Using cache
+	---> 255f51709816
+	Step 5/6 : ENV NAME World
+	---> Using cache
+	---> d79d78336885
+	Step 6/6 : CMD ["python", "app.py"]
+	---> Using cache
+	---> 687bc506dd46
+	Successfully built 687bc506dd46
+	Successfully tagged mypyweb:latest
+
+
+
+
+
+
+
+
+
+
+
