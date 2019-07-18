@@ -68,7 +68,10 @@ Making changes
 --------------
 
 > git status
-	Provides untracked files
+	Provides untracked files.
+
+> git checkout -- <file>
+	To discard changes in working directory.
 
 > touch .gitignore 
 	creates a file which can contain all the files to be ignored. If we place *.project in this file and run > git status command
@@ -78,9 +81,27 @@ Making changes
 
 > git add -A	
 	Add all files to staging area/index
+	This means that git now knows about the change, but the change hasn’t been permanently recorded in the repository yet.
+	When you say git add file, you are not telling git to add the file to the repository. 
+	Rather you are saying that git should make note of the current state of that file to be committed later.
+	Meaning is that only those changes which are in the staging will be considered for commit even though
+		there are other changes in the file which are not staged.
+
+> git rm hello.rb
+	remove the file
+
+Undoing Staging
+---------------
 
 > git reset
-	Resets back to working area
+	Resets back to working area or unstage that change. 
+	
+> git reset HEAD hello.rb
+	The reset command resets the staging area to be whatever is in HEAD. 
+	This clears the staging area of the change we just staged.
+	The reset command (by default) doesn’t change the working directory. 
+	So the working directory still has the unwanted changes in it. 
+	We can use the checkout command to remove the unwanted change from the working directory.
 	
 > git commit -m "commit message"
 
@@ -88,6 +109,36 @@ Making changes
 	-a option automatically adds all the tracked files to staging/index area and commits them.
 	The untracked files need to be added explicitly
 
+Undoing Commits
+---------------
+Sometimes you realized that a change that you have already committed was not correct and you wish to undo that commit. 
+There are several ways of handling that issue, and the way we are going to use in this lab is always safe.
+Essentially we will undo the commit by creating a new commit that reverses the unwanted changes.
+
+> git add hello.rb
+> git commit -m "Oops, we didn't want this commit"
+
+To undo a committed change, we need to generate a commit that removes the changes introduced by our unwanted commit.
+
+> git revert HEAD
+	This will pop you into the editor. 
+	You can edit the default commit message or leave it as is. 
+	Save and close the file. You should see …
+
+> git revert HEAD --no-edit
+	[master a10293f] Revert "Oops, we didn't want this commit"
+ 	1 files changed, 1 insertions(+), 1 deletions(-)
+	
+Since we were undoing the very last commit we made, we were able to use HEAD as the argument to revert. 
+We can revert any arbitrary commit earlier in history by simply specifying its hash value.
+
+$ git log --pretty=oneline
+* a10293f 2013-04-13 | Revert "Oops, we didn't want this commit" (HEAD, master) [Jim Weirich]
+* 838742c 2013-04-13 | Oops, we didn't want this commit [Jim Weirich]
+* 1f7ec5e 2013-04-13 | Added a comment (v1) [Jim Weirich]
+* 582495a 2013-04-13 | Added a default value (v1-beta) [Jim Weirich]
+* 323e28d 2013-04-13 | Using ARGV [Jim Weirich]
+* 9416416 2013-04-13 | First Commit [Jim Weirich]
 	
 Synch repos
 -----------
@@ -110,7 +161,8 @@ Creating a branch
 > git checkout <branch-name>
 	Switch to that branch, Start working on that branch, whatever commands we give operate on this branch
 
-> git branch <branch-name>
+> git branch <branch-name> 
+> git checkout -b new_branch_name
 	Creates new branch with specified name from the operating branch
 
 > git branch
@@ -133,6 +185,55 @@ Deleting a branch
 
 > git push origin --delete <branch-name>
 
+Tagging versions
+----------------
+
+Ex: Let’s call the current version of the hello program version 1 (v1)
+
+> git tag v1
+	Now you can refer to the current version of the program as v1
+
+Tagging Previous Versions 
+-------------------------
+Let’s tag the version immediately prior to the current version v1-beta. 
+First we need to checkout the previous version. 
+Rather than lookup up the hash, we will use the ^ notation to indicate “the parent of v1”.
+If the v1^ notation gives you any trouble, you can also try v1~1, which will reference the same version. 
+This notation means “the first ancestor of v1”.
+
+> git checkout v1^
+	Note: checking out 'v1^'.
+
+	You are in 'detached HEAD' state. You can look around, make experimental
+	changes and commit them, and you can discard any commits you make in this
+	state without impacting any branches by performing another checkout.
+
+	If you want to create a new branch to retain commits you create, you may
+	do so (now or later) by using -b with the checkout command again. Example:
+
+	  git checkout -b new_branch_name
+
+	HEAD is now at 582495a... Added a default value
+
+See, this is the version with the default value before we added the comment. Let’s make this v1-beta.
+
+> git tag v1-beta
+
+Checking Out by Tag Name 
+------------------------
+
+> git checkout v1
+	Previous HEAD position was 582495a... Added a default value
+	HEAD is now at 1f7ec5e... Added a comment
+	
+$ git checkout v1-beta
+	Previous HEAD position was 1f7ec5e... Added a comment
+	HEAD is now at 582495a... Added a default value
+
+> git tag
+	v1
+	v1-beta
+
 Reverting changes 
 -----------------	
 	
@@ -141,8 +242,52 @@ Reverting changes
 	
 > git checkout <first 8 alphanumerics of the hash key> <name of the file>
 	reverts to the old commit
-
 	
+ex: 
+> git log
+
+	commit 1f7ec5eaa8f37c2770dae3b984c55a1531fcc9e7
+	Author: Jim Weirich <jim (at) neo.com>
+	Date:   Sat Apr 13 15:20:42 2013 -0400
+
+	    Added a comment
+
+	commit 582495ae59ca91bca156a3372a72f88f6261698b
+	Author: Jim Weirich <jim (at) neo.com>
+	Date:   Sat Apr 13 15:20:42 2013 -0400
+
+	    Added a default value
+
+	commit 323e28d99a07d404c04f27eb6e415d4b8ab1d615
+	Author: Jim Weirich <jim (at) neo.com>
+	Date:   Sat Apr 13 15:20:42 2013 -0400
+
+	    Using ARGV
+
+	commit 94164160adf8faa3119b409fcfcd13d0a0eb8020
+	Author: Jim Weirich <jim (at) neo.com>
+	Date:   Sat Apr 13 15:20:42 2013 -0400
+
+	    First Commit
+    
+> git log --pretty=oneline
+
+	1f7ec5eaa8f37c2770dae3b984c55a1531fcc9e7 Added a comment
+	582495ae59ca91bca156a3372a72f88f6261698b Added a default value
+	323e28d99a07d404c04f27eb6e415d4b8ab1d615 Using ARGV
+	94164160adf8faa3119b409fcfcd13d0a0eb8020 First Commit
+
+> git log --pretty=oneline --max-count=2
+> git log --pretty=oneline --since='5 minutes ago'
+> git log --pretty=oneline --until='5 minutes ago'
+> git log --pretty=oneline --author=<your name>
+> git log --pretty=oneline --all
+
+Examine the log output and find the hash for the first commit. 
+It should be the last line of the git log output. 
+Use that hash code (the first 7 characters are enough) in the command below.
+Then check the contents of the hello.rb file.
+
 Rebasing
 --------
 
