@@ -50,8 +50,8 @@ What is a JSON Web Token (JWT)?
 		
 		In its compact form, JSON Web Tokens consist of three parts separated by dots (.), which are:
 
-			1. Header
-			2. Payload
+			1. Header (Base 64 encoded)
+			2. Payload (Base 64 encoded)
 			3. Signature literally means server has put its sign on the token and that sign will be used to identify the credibility of payload. 
 			(calculated from header + payload + secret key) 
 			Whenever header and payload data changes the signature is applied again using same secret key and a new signature is calculated. 
