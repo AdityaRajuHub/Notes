@@ -52,7 +52,10 @@ What is a JSON Web Token (JWT)?
 
 			1. Header
 			2. Payload
-			3. Signature
+			3. Signature literally means server has put its sign on the token and that sign will be used to identify the credibility of payload. 
+			(calculated from header + payload + secret key) 
+			Whenever header and payload data changes the signature is applied again using same secret key and a new signature is calculated. 
+			This will be used by the server to verify the payload has not beem manipulated.
 	
 		Therefore, a JWT typically looks like the following.
 
@@ -113,7 +116,7 @@ What is a JSON Web Token (JWT)?
 			  base64UrlEncode(payload),
 			  secret)
 			  
-			The signature is used to verify the message wasn't changed along the way, and, in the case of tokens signed with a private key, 
+			The signature is used to verify the message (header + payload) wasn't changed along the way, and, in the case of tokens signed with a private key, 
 				it can also verify that the sender of the JWT is who it says it is.
 
 	Putting all together
