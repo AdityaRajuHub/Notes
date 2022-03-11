@@ -1,5 +1,70 @@
 
+Spring Security works based on filters. A filter is the one which intercepts a request before the servlet/service handles the request. One such filter of spring that we configure in web.xml is DelatingFilterProxy which is just a main filter which delegates to multiple other filter under it.
 
+<filter>
+<filter-name>springSecurityFilterChain</filter-name>
+<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+</filter>
+
+<filter-mapping>
+<filter-name>springSecurityFilterChain</filter-name>
+<url-pattern>/*</url-pattern>
+</filter-mapping>
+
+This is the default configuration in Spring boot when we add spring-security-starter dependency.
+This delegating filter delegates to multiple other filters one such filter is Authentication related filter.
+
+Authentication is a data tranfer object which holds the user's credentials before authentication and then sends this to something called AuthenticationProvider.
+public interface Authentication
+extends Principal, Serializable
+Represents the token for an authentication request or for an authenticated principal once the request has been processed by the AuthenticationManager.authenticate(Authentication) method.
+Once the request has been authenticated, the Authentication will usually be stored in a thread-local SecurityContext managed by the SecurityContextHolder by the authentication mechanism which is being used. An explicit authentication can be achieved, without using one of Spring Security's authentication mechanisms, by creating an Authentication instance and using the code:
+
+ SecurityContextHolder.getContext().setAuthentication(anAuthentication);
+ 
+ Methods supported 
+ ----------------
+ Collection<? extends GrantedAuthority>	getAuthorities()
+Set by an AuthenticationManager to indicate the authorities that the principal has been granted.
+
+Object	getCredentials()
+The credentials that prove the principal is correct.
+
+Object	getDetails()
+Stores additional details about the authentication request.
+
+Object	getPrincipal()
+The identity of the principal being authenticated.
+
+boolean	isAuthenticated()
+Used to indicate to AbstractSecurityInterceptor whether it should present the authentication token to the AuthenticationManager.
+
+void	setAuthenticated(boolean isAuthenticated)
+See isAuthenticated() for a full description.
+
+
+There can be multiple AuthenticationProviders depending on how you want to authenticate. ex: InMemory based, Dao based, OAuth based, JWT based etc
+
+AuthenticationProvider
+----------------------
+public interface AuthenticationProvider
+Indicates a class can process a specific Authentication implementation.
+Method Summary
+-------------
+All MethodsInstance MethodsAbstract Methods
+Modifier and Type	Method and Description
+
+Authentication	authenticate(Authentication authentication)
+Performs authentication with the same contract as AuthenticationManager.authenticate(Authentication) .
+
+boolean	supports(Class<?> authentication)
+Returns true if this AuthenticationProvider supports the indicated Authentication object.
+
+So in order to decide which Authentication Provider to call, there is a AuthenticationManager which is responsible for selecting the right provider by calling the supports(?) method on the provider to check if it supports the kind of authentication requested.
+
+After authentication the provider returns same Authentication object back to authentication manager but adding the Principal object which contains the userDetails object loaded from data store..
+The authentication manager returns this Auth object back to the filter which stores Authentication object in SecurityContext.
+There is another filter which is responsible for reading this SecurityContext and verifies whether the user's session is still valid.
 
 DelegatingPasswordEncoder is the default password encoder
 -------------------------
