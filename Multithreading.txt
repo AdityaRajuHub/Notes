@@ -177,10 +177,32 @@ Since notify() and notifyAll() randomly wakes up threads that are waiting on thi
 it’s not always important that the condition is met. 
 Sometimes it can happen that the thread is woken up, but the condition isn’t actually satisfied yet.
 
+You need not only to loop it but check your condition in the loop. Java does not guarantee that your thread will be woken up only by a notify()/notifyAll() call or the right notify()/notifyAll() call at all. Because of this property the loop-less version might work on your development environment and fail on the production environment unexpectedly.
+
+For example, you are waiting for something:
+
+synchronized (theObjectYouAreWaitingOn) {
+   while (!carryOn) {
+      theObjectYouAreWaitingOn.wait();
+   }
+}
+An evil thread comes along and:
+
+theObjectYouAreWaitingOn.notifyAll();
+If the evil thread does not/can not mess with the carryOn you just continue to wait for the proper client.
+
 2. Why use while instead of if condition
 -------------------------------------
 Spurious wakeups – where a thread can wake up from waiting without ever having received a notification
-This can happen for various reasons, so if we have an if then 
+This can happen for various reasons, so if we have an if then
+
+A thread can also wake up without being notified, interrupted, or timing out, a so-called spurious wakeup. While this will rarely occur in practice, applications must guard against it by testing for the condition that should have caused the thread to be awakened, and continuing to wait if the condition is not satisfied. In other words, waits should always occur in loops, like this one:
+
+ synchronized (obj) {
+     while (<condition does not hold>)
+         obj.wait(timeout);
+     ... // Perform action appropriate to condition
+ }
 
 3. Why Do We Need to Synchronize send() and receive() Methods?
 -----------------------------------------------------------
