@@ -108,15 +108,6 @@ Life cycle hooks
 						
 	5. ngOnDestroy() 	-> called once before destroying component meaning before component is removed from the DOM.
 						-> useful for unsubscribing from the observables and detaching the event handlers to avoid memory leaks. 
-						
-	Lifecycle methods with component’s view
-	---------------------------------------
-	These lifecycle methods are called once the view is loaded.
-		
-		1. ngAfterViewinit()	-> called once after view and child views are loaded in DOM.
-		
-		2. ngAfterViewChecked()	-> called once after ngAfterViewinit and everytime after ngDoCheck()
-		
 	Lifecycle methods with content projection into Component’s view
 	---------------------------------------------------------------
 	In Angular, There is a way we can project content into the component’s view. 
@@ -128,7 +119,28 @@ Life cycle hooks
 	1. ngAfterContentInit()		-> called whenever Angular projects content into the view that this directive is in. 
 									This is called only once after ngDoCheck.
 	
-	2. ngAfterContentChecked()	-> 	
+	2. ngAfterContentChecked()	-> This lifecycle hook method executes every time the content of the component has been checked by the change detection 						mechanism of Angular. 
+					This method is called after the ngAfterContentInit() method. 
+					This method is also called on every subsequent execution of ngDoCheck() 
+			
+	Lifecycle methods with component’s view
+	---------------------------------------
+	These lifecycle methods are called once the view is loaded.
+		
+		1. ngAfterViewinit()	-> called once after view and child views are loaded in DOM.
+		
+		2. ngAfterViewChecked()	-> called once after ngAfterViewinit and everytime after ngDoCheck()
+		
+	Order of calling methods of component
+	--------------------------------------
+		
+	constructor() -> ngOnChanges(SimpleChanges obj contains old and new) -> ngOnInit() -> ngDoCheck() ->
+	Next the content placed in the components selector tags are placed in <ng-content> tag in the component so that will be called
+	-> ngAfterContentInit() -> ngAfterContentChecked() ->
+	Next the child components inside this component will be loaded
+	-> ngAfterViewInit() -> ngAfterViewChecked()
+	
+	The checked methods are called each time the property 	
 	
 
 1. The selector can be mentioned in 3 ways 
