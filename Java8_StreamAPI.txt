@@ -42,7 +42,7 @@ Stream Creation
 		As the resulting stream is infinite, developer should specify the desired size or the 
 			generate() method will work until it reaches the memory limit:
 			
-			The code creates a sequence of ten strings with the value ñ ìelementî.
+			The code creates a sequence of ten strings with the value ‚Äì ‚Äúelement‚Äù.
 			
 			Stream<String> streamGenerated = Stream.generate(() -> "element").limit(10);
 
@@ -68,11 +68,22 @@ Stream Creation
 	An attempt to reuse the same reference after calling the terminal operation will trigger the IllegalStateException:
 	
 		Stream<String> stream = 
-		Stream.of("a", "b", "c").filter(element -> element.contains("b"));	//stream ends here it doesn't store any results
+		Stream.of("a", "b", "c").filter(element -> element.contains("b"));	
+		stream.forEach(System.out::println); 	//stream ends here as terminal operation has been performed and stream doesn't store any results
 		Optional<String> anyElement = stream.findAny();	//Exception since stream is already closed
+
+	Exception in thread "main" java.lang.IllegalStateException: stream has already been operated upon or closed
+		at java.util.stream.AbstractPipeline.<init>(AbstractPipeline.java:203)
+		at java.util.stream.LongPipeline.<init>(LongPipeline.java:91)
+		at java.util.stream.LongPipeline$StatelessOp.<init>(LongPipeline.java:572)
+		at java.util.stream.ReferencePipeline$5.<init>(ReferencePipeline.java:221)
+		at java.util.stream.ReferencePipeline.mapToLong(ReferencePipeline.java:220)
+		at java.util.stream.ReferencePipeline.count(ReferencePipeline.java:526)
+		at com.demo.NrmlDemo.main(NrmlDemo.java:98)
+
 	
 	As the IllegalStateException is a RuntimeException, a compiler will not signalize about a problem. 
-		So, it is very important to remember that Java 8 streams canít be reused since they cannot store any results and are only used to process a stream.
+		So, it is very important to remember that Java 8 streams can‚Äôt be reused since they cannot store any results and are only used to process a stream.
 
 ***Note: This kind of behavior is logical because streams were designed to provide an ability to apply a finite sequence of operations 
 			to the source of elements in a functional style, but not to store elements.
@@ -81,7 +92,7 @@ Stream Creation
 Stream Pipeline
 ---------------
 	To perform a sequence of operations over the elements of the data source and aggregate their results, 
-		Three parts are needed ñ 
+		Three parts are needed ‚Äì 
 		
 		1. the Source, 
 		2. one or more Intermediate operation(s) and 
@@ -116,9 +127,9 @@ Stream Pipeline
 			counter++;
 		}
 
-	Letís call method wasCalled() from operation filter():
+	Let‚Äôs call method wasCalled() from operation filter():
 
-		List<String> list = Arrays.asList(ìabc1î, ìabc2î, ìabc3î);
+		List<String> list = Arrays.asList(‚Äúabc1‚Äù, ‚Äúabc2‚Äù, ‚Äúabc3‚Äù);
 		counter = 0;
 		Stream<String> stream = list.stream().filter(element -> {
 			wasCalled();
@@ -126,10 +137,10 @@ Stream Pipeline
 		});
 		
 	As we have a source of three elements we can assume that method filter() will be called three times and the value of the counter variable will be 3. 
-	But running this code doesnít change counter at all, it is still zero, so, the filter() method wasnít called even once. 
-	The reason why ñ is missing of the terminal operation.
+	But running this code doesn‚Äôt change counter at all, it is still zero, so, the filter() method wasn‚Äôt called even once. 
+	The reason why ‚Äì is missing of the terminal operation.
 
-	Letís rewrite this code a little bit by adding a map() operation and a terminal operation ñ findFirst(). 
+	Let‚Äôs rewrite this code a little bit by adding a map() operation and a terminal operation ‚Äì findFirst(). 
 	We will also add an ability to track an order of method calls with a help of logging:
 
 		Optional<String> stream = list.stream().filter(element -> {
@@ -143,12 +154,12 @@ Stream Pipeline
 	Resulting log shows that the filter() method was called twice and the map() method just once. 
 	It is so because the "PIPLELINE EXECUTES VERTICALLY".
 						  -----------------------------
-	In our example the first element of the stream didnít satisfy filterís predicate, 
+	In our example the first element of the stream didn‚Äôt satisfy filter‚Äôs predicate, 
 		then the filter() method was invoked for the second element, which passed the filter. 
 		Without calling the filter() for third element we went down through pipeline to the map() method.
 
 	The findFirst() operation satisfies by just one element. 
-	So, in this particular example the lazy invocation allowed to avoid two method calls ñ one for the filter() and one for the map().
+	So, in this particular example the lazy invocation allowed to avoid two method calls ‚Äì one for the filter() and one for the map().
 
 Order of Execution
 ------------------
@@ -176,22 +187,22 @@ The reduce() Method
 	
 	They can have the following parameters:
 
-		1. identity 	ñ 	the initial value for an accumulator or a default value if a stream is empty and there is nothing to accumulate;
+		1. identity 	‚Äì 	the initial value for an accumulator or a default value if a stream is empty and there is nothing to accumulate;
 
-		2. accumulator 	ñ 	a function which specifies a logic of aggregation of elements. 
+		2. accumulator 	‚Äì 	a function which specifies a logic of aggregation of elements. 
 							As accumulator creates a new value for every step of reducing, 
-							the quantity of new values equals to the streamís size and only the last value is useful. 
+							the quantity of new values equals to the stream‚Äôs size and only the last value is useful. 
 							This is not very good for the performance.
 
-		3. combiner 	ñ 	a function which aggregates results of the accumulator. 
+		3. combiner 	‚Äì 	a function which aggregates results of the accumulator. 
 							Combiner is called only in a parallel mode to reduce results of accumulators from different threads.
 
-	So, letís look at these three methods in action:
+	So, let‚Äôs look at these three methods in action:
 
 		Only Accumulator
 		----------------
 
-		OptionalInt reduced = IntStream.range(1, 4).reduce((a, b) -> a + b);	// here a is the element and b is the sum
+		OptionalInt reduced = IntStream.range(1, 4).reduce((a, b) -> a + b);	// here a is the sum and b is the element
 		
 		  1. (1, 0) -> 1 + 0
 		  2. (2, 1) -> 2 + 1
@@ -219,7 +230,7 @@ The reduce() Method
 											 return a + b;
 									});
 
-		The result will be the same as in the previous example (16) and there will be no loging which means, that combiner wasnít called. 
+		The result will be the same as in the previous example (16) and there will be no loging which means, that combiner wasn‚Äôt called. 
 
 		To make a combiner work, a stream should be parallel:
 
@@ -238,7 +249,7 @@ The reduce() Method
 The collect() Method
 --------------------
 
-	Reduction of a stream can also be executed by another terminal operation ñ the collect() method. 
+	Reduction of a stream can also be executed by another terminal operation ‚Äì the collect() method. 
 	It accepts an argument of the type Collector, which specifies the mechanism of reduction. 
 	There are already created predefined collectors for most common operations. They can be accessed with the help of the Collectors type.
 
@@ -255,20 +266,20 @@ The collect() Method
 
 	int summingPrice = productList.stream().collect(Collectors.summingInt(Product::getPrice));
 	Methods averagingXX(), summingXX() and summarizingXX() can work as with primitives (int, long, double) as with their wrapper classes (Integer, Long, Double). 
-	One more powerful feature of these methods is providing the mapping. So, developer doesnít need to use an additional map() operation before the collect() method.
+	One more powerful feature of these methods is providing the mapping. So, developer doesn‚Äôt need to use an additional map() operation before the collect() method.
 
 
-Collecting statistical information about streamís elements:
+Collecting statistical information about stream‚Äôs elements:
 ------------------------------------------------------------
 
 	IntSummaryStatistics statistics = productList.stream().collect(Collectors.summarizingInt(Product::getPrice));
 	
 	By using the resulting instance of type IntSummaryStatistics developer can create a statistical report by applying toString() method. 
-	The result will be a String common to this one ìIntSummaryStatistics{count=5, sum=86, min=13, average=17,200000, max=23}î.
+	The result will be a String common to this one ‚ÄúIntSummaryStatistics{count=5, sum=86, min=13, average=17,200000, max=23}‚Äù.
 
 	It is also easy to extract from this object separate values for count, sum, min, average by applying methods getCount(), getSum(), getMin(), getAverage(), getMax(). All these values can be extracted from a single pipeline.
 
-Grouping of streamís elements according to the specified function:
+Grouping of stream‚Äôs elements according to the specified function:
 ---------------------------------------------------------------------
 
 	Map<Integer, List<Product>> collectorMapOfLists = productList.stream().collect(Collectors.groupingBy(Product::getPrice));
@@ -276,7 +287,7 @@ Grouping of streamís elements according to the specified function:
 	In the example above the stream was reduced to the Map which groups all products by their price.
 
 
-Dividing streamís elements into groups according to some predicate:
+Dividing stream‚Äôs elements into groups according to some predicate:
 -------------------------------------------------------------------
 
 	Map<Boolean, List<Product>> mapPartioned = productList.stream()
@@ -288,7 +299,7 @@ Dividing streamís elements into groups according to some predicate:
 Custom collector:
 ---------------------
 
-	If for some reason, a custom collector should be created, the most easier and the less verbose way of doing so ñ is to use the method of() of the type Collector.
+	If for some reason, a custom collector should be created, the most easier and the less verbose way of doing so ‚Äì is to use the method of() of the type Collector.
 
 	Collector<Product, ?, LinkedList<Product>> toLinkedList =
 	  Collector.of(LinkedList::new, LinkedList::add, 
@@ -306,7 +317,7 @@ Custom collector:
 Parallel Streams
 -----------------
 	Before Java 8, parallelization was complex. 
-	Emerging of the ExecutorService and the ForkJoin simplified developerís life a little bit, 
+	Emerging of the ExecutorService and the ForkJoin simplified developer‚Äôs life a little bit, 
 		but they still should keep in mind how to create a specific executor, how to run it and so on. 
 		Java 8 introduced a way of accomplishing parallelism in a functional style.
 
@@ -329,7 +340,7 @@ Parallel Streams
 	This can be overcome by using a custom set of parallel collectors.
 
 	When using streams in parallel mode, avoid blocking operations and use parallel mode when tasks need the similar amount of time to execute 
-	(if one task lasts much longer than the other, it can slow down the complete appís workflow).
+	(if one task lasts much longer than the other, it can slow down the complete app‚Äôs workflow).
 
 	The stream in parallel mode can be converted back to the sequential mode by using the sequential() method:
 
@@ -339,10 +350,10 @@ Parallel Streams
 Conclusions
 -----------
 	The Stream API is a powerful but simple to understand set of tools for processing sequence of elements. 
-	It allows us to reduce a huge amount of boilerplate code, create more readable programs and improve appís productivity when used properly.
+	It allows us to reduce a huge amount of boilerplate code, create more readable programs and improve app‚Äôs productivity when used properly.
 
-	In most of the code samples shown in this article streams were left unconsumed (we didnít apply the close() method or a terminal operation). 
-	In a real app, donít leave an instantiated streams unconsumed as that will lead to memory leaks.
+	In most of the code samples shown in this article streams were left unconsumed (we didn‚Äôt apply the close() method or a terminal operation). 
+	In a real app, don‚Äôt leave an instantiated streams unconsumed as that will lead to memory leaks.
 
 
 ------------------------------------------------------------------------------
@@ -360,7 +371,7 @@ What you mean by flattening ?
 	The list before flattening :
 
 	[ [2, 3, 5], [7, 11, 13], [17, 19, 23] ]
-	The list has 2 levels and consists of 3 small lists. After Flattening, it gets transformed into ìone levelî structure as shown :
+	The list has 2 levels and consists of 3 small lists. After Flattening, it gets transformed into ‚Äúone level‚Äù structure as shown :
 
 	[ 2, 3, 5, 7, 11, 13, 17, 19, 23 ] 
 
