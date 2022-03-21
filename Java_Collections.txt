@@ -2,9 +2,32 @@ Collection - interface
 Collections - class
 ------------------------------------------------------------------
 
-Collection(I) provides some basic operations. It implements Iterable.
+Collection(I) provides some basic operations. It extends Iterable(I) interface.
 It does not work based on index.
-There are interfaces which extend base interface and provide some more operations
+
+The Iterable interface was introduced in JDK 1.5. It belongs to java.lang package. In general, an object Implementing Iterable allows it to be iterated. An iterable interface allows an object to be the target of enhanced for loop(for-each loop). 
+
+Definition of Iterable
+----------------------
+public interface Iterable<T>
+{
+  Iterator<T>    iterator();
+  
+  Spliterator<T> spliterator();
+
+  void           forEach(Consumer<? super T> action);
+}
+Here, T is the type of element returned by the Iterator.
+
+Ways of Iterating
+
+There are three ways in which objects of Iterable can be iterated.
+
+Using enhanced for loop(for-each loop)
+Using Iterable forEach loop
+Using Iterator<T> interface
+
+There are interfaces which extend Collection interface and provide some more operations
 
 	1. List -> provides indexed based insertion
 	2. Set
