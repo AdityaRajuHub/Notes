@@ -68,6 +68,167 @@ After authentication the provider returns same Authentication object back to aut
 The authentication manager returns this Auth object back to the filter which stores Authentication object in SecurityContext.
 There is another filter which is responsible for reading this SecurityContext and verifies whether the user's session is still valid.
 
+@Component
+public class KioskDriverHttpAuthenticationProvider implements AuthenticationProvider {
+    
+    @Inject
+    private AccountPropRepository accountPropRepository;
+    
+    private static final Logger logger = LoggerFactory.getLogger(KioskDriverHttpAuthenticationProvider.class);
+    
+    private static final GrantedAuthority READ = new SimpleGrantedAuthority("READ");
+    private static final GrantedAuthority UPDATE = new SimpleGrantedAuthority("UPDATE");
+    private static final Set<GrantedAuthority> KIOSK_DRIVER_AUTHORITIES = ImmutableSet.of(READ, UPDATE);
+    
+    @Transactional(readOnly = true)
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        
+        PeopleView authorizedDriver = getDriverFromAuthentication(authentication);
+        
+        Collection<? extends GrantedAuthority> authorities = buildUserFromKioskDriverEntity(authorizedDriver).getAuthorities();
+        Authentication authenticationAndAuthorities = new UsernamePasswordAuthenticationToken(authorizedDriver, authentication.getCredentials(), authorities);
+        
+        SecurityContextHolder.getContext().setAuthentication(authenticationAndAuthorities);
+        
+//        System.out.println("authenticationAndAuthorities: " + authenticationAndAuthorities);
+        return authenticationAndAuthorities;
+    }
+    
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public PeopleView getDriverFromAuthentication(Authentication authentication) {
+        
+        logger.debug("authentication principal: {} ceredentials: {}" + authentication.getPrincipal(), authentication.getCredentials());
+        
+        String p = authentication.getPrincipal().toString();
+
+        boolean usingPin = (p.startsWith("~") && p.endsWith("~~"));
+        
+        
+        final String[] credentials = ((String) authentication.getCredentials()).split("-");
+        
+        if (credentials.length < 2) {
+        	throw new AccessDeniedException("{\"errMessage\":\"Account Code, and Employee ID are required");
+        }
+        
+        final String accountCode = credentials[0].toString();
+        final String empId = credentials[1].toString();
+       
+        if (usingPin) {		
+        	final String driverPin = p.substring(1,p.indexOf("~~"));	// PIN is stored in the format ~#####~~  inside the principal
+        	logger.debug("KioskDriverHttpAuthentication: getDriverFromAuthentication() with PIN: " + driverPin + ", empid: " + empId + ", UTCtimestamp: " + getUTCDateNow());
+        	
+        	return getKioskDriverInfoUsingPin(accountCode,driverPin,empId);
+        	
+        } else {	// We are using accountCode-employeeID format in password field
+        	
+        	final String last = authentication.getName();
+            logger.debug("KioskDriverHttpAuthentication: getDriverFromAuthentication() with accountCode: " + accountCode + ", empid: " + empId + ", last: " + last + ", UTCtimestamp: " + getUTCDateNow());
+            checkKioskDriverLoginParameters(accountCode, last, empId);
+            
+            return getKioskDriverInfo(accountCode, last, empId);
+        }
+    }
+    
+    public PeopleView getKioskDriverInfoUsingPin(final String accountCode, final String driverPin, final String empid) {
+    	List<AccountProp> accountProp = accountPropRepository.findByNameAndValue("accountCode", accountCode);
+        if (accountProp.isEmpty()) {
+            throw new AccessDeniedException("{\"errMessage\":\"Account Code: " + accountCode + " does not exist. Please check the case-sensitive spelling and try again.\"}");
+        }
+            
+        final List<PeopleView> peopleView = getPeopleViewByEmpIdAcctIDAndDriverPin(accountProp.get(0).getAcctID(), empid, driverPin);
+     
+        if (peopleView.isEmpty()) {
+            throw new AccessDeniedException(
+                            "{\"errMessage\":\"Employee/Driver ID: " + empid + ", acct: " + accountCode + ", pin: " + driverPin + " does not exist. Please check the case-sensitive spelling and try again.\"}");
+        }
+                            
+        return peopleView.get(0);
+    }
+    
+    public PeopleView getKioskDriverInfo(final String accountCode, final String last, final String empid) {
+        List<AccountProp> accountProp = accountPropRepository.findByNameAndValue("accountCode", accountCode);
+        if (accountProp.isEmpty())
+            throw new AccessDeniedException("{\"errMessage\":\"Account Code: " + accountCode + " does not exist. Please check the case-sensitive spelling and try again.\"}");
+            
+        final List<PeopleView> peopleView = getPeopleViewByAcctIdAndEmpidAndLast(accountProp.get(0).getAcctID(), empid, last);
+        if (peopleView.isEmpty())
+            throw new AccessDeniedException(
+                            "{\"errMessage\":\"Employee/Driver ID: " + empid + ", last name: " + last + " does not exist. Please check the case-sensitive spelling and try again.\"}");
+                            
+        return peopleView.get(0);
+    }
+    
+    public List<PeopleView> getPeopleViewByAcctIdAndEmpidAndLast(Integer acctID, String empid, String last) {
+        return entityManager.createNamedQuery("getPeopleViewByAcctIDAndEmpidAndLast", PeopleView.class)
+                        .setParameter("accountID", acctID)
+                        .setParameter("empid", empid)
+                        .setParameter("last", last)
+                        .setParameter("status", ACTIVE).getResultList();
+    }
+    
+    public List<PeopleView> getPeopleViewByEmpIdAcctIDAndDriverPin(Integer acctID, String empid, String driverPin) {
+    	return entityManager.createNamedQuery("getPeopleViewByEmpIdAcctIDAndDriverPinQuery", PeopleView.class)
+    			.setParameter("accountID", acctID)
+                .setParameter("empid", empid)
+                .setParameter("driverPin", driverPin)
+                .setParameter("status", ACTIVE).getResultList();
+    }
+    
+    public void checkKioskDriverLoginParameters(String accountCode, String last, String empid) {
+        if (isNullOrEmpty(accountCode) || isNullOrEmpty(last) || isNullOrEmpty(empid))
+            throw new AccessDeniedException("{\"errMessage\":\"Account Code, Employee/Driver ID and last name are required");
+    }
+    
+    public UserDetails buildUserFromKioskDriverEntity(PeopleView authorizedDriver) {
+        
+        final User inthincKioskDriver = new User(
+                        authorizedDriver.getDriverID().toString(),
+                        authorizedDriver.getPersonID().toString(),
+                        true,
+                        true,
+                        true,
+                        true,
+                        buildGrantedAuthorities(authorizedDriver));
+                        
+        return inthincKioskDriver;
+    }
+    
+    private Collection<? extends GrantedAuthority> buildGrantedAuthorities(PeopleView authorizedDriver) {
+        return KIOSK_DRIVER_AUTHORITIES;
+    }
+    
+    public PeopleView getAuthKioskDriver() {
+ //       System.out.println("SecurityContextHolder.getContext().getAuthentication().getPrincipal(): " + SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        return (PeopleView) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
+    
+    public Integer getAuthKioskDriverID() {
+        return getAuthKioskDriver().getDriverID();
+    }
+    
+    public String getKioskDriverNameAndPersonID(){
+        PeopleView authDriver = getAuthKioskDriver();
+        return " [" + authDriver.getFirst() + " " + authDriver.getLast() + " (personID:" + authDriver.getPersonID() + ")]";
+    }
+    
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return true;
+    }
+    
+    public boolean isAuthenticated() {
+    	if(SecurityContextHolder.getContext().getAuthentication().getPrincipal() instanceof PeopleView) {
+    		return true;
+    	} else {
+    		return false;
+    	}
+    }
+    
+}
+
 DelegatingPasswordEncoder is the default password encoder
 -------------------------
 public class DelegatingPasswordEncoder
