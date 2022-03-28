@@ -1,5 +1,6 @@
 
-Spring Security works based on filters. A filter is the one which intercepts a request before the servlet/service handles the request. One such filter of spring that we configure in web.xml is DelatingFilterProxy which is just a main filter which delegates to multiple other filter under it.
+Spring Security works based on filters. A filter is the one which intercepts a request before the servlet/service handles the request. 
+One such filter of spring that we configure in web.xml is DelatingFilterProxy which is just a main filter which delegates to multiple other filter under it.
 
 <filter>
 <filter-name>springSecurityFilterChain</filter-name>
@@ -18,7 +19,8 @@ Authentication is a data tranfer object which holds the user's credentials befor
 public interface Authentication
 extends Principal, Serializable
 Represents the token for an authentication request or for an authenticated principal once the request has been processed by the AuthenticationManager.authenticate(Authentication) method.
-Once the request has been authenticated, the Authentication will usually be stored in a thread-local SecurityContext managed by the SecurityContextHolder by the authentication mechanism which is being used. An explicit authentication can be achieved, without using one of Spring Security's authentication mechanisms, by creating an Authentication instance and using the code:
+Once the request has been authenticated, the Authentication will usually be stored in a thread-local SecurityContext managed by the SecurityContextHolder by the authentication mechanism which is being used. 
+An explicit authentication can be achieved, without using one of Spring Security's authentication mechanisms, by creating an Authentication instance and using the code:
 
  SecurityContextHolder.getContext().setAuthentication(anAuthentication);
  
