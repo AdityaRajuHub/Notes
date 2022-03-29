@@ -49,6 +49,8 @@ db.class3.find({
     	$or : [{"last-name":"Kawle"}, {"age":"14"}]
 }) 
 
+By default update is used to replace content but $set is used to update the specific document with the data
+
 db.class3.update(
 {"_id": ObjectId("5cceed58cb098cf48cee5b31")},
 {$set : {"first-name":"Abdul"}}
